@@ -20,6 +20,9 @@
 			 (?tgt ?str)
 			 (eq (str-index ?tgt ?str) 1))
 (deftemplate lex-element
+			 (slot parent
+				   (type SYMBOL)
+				   (default ?NONE))
 			 (slot value
 				   (default ?NONE))
 			 (slot index
@@ -27,9 +30,32 @@
 				   (range 0 ?VARIABLE)
 				   (default ?NONE)))
 (deffunction new-lex-element
-			 (?value ?index)
+			 (?value ?index ?parent)
 			 (assert (lex-element (value ?value)
-								  (index ?index))))
+								  (index ?index)
+								  (parent ?parent))))
+(defrule open-file
+		 ?f <- (open ?file)
+		 =>
+		 (retract ?f)
+		 (bind ?name (gensym*))
+		 (if (open ?file ?name "r") then
+		   (assert (read element from ?name))
+		   else
+		   (printout werror "Couldn't open " ?file crlf)))
+(defrule read-elements
+		 ?f <- (read elements from ?rtr)
+		 =>
+		 (retract ?f)
+		 (bind ?element (read ?rtr))
+		 (bind ?index 0)
+		 (while (neq ?element EOF) do
+				(new-lex-element ?element
+								 ?index
+								 ?rtr)
+				(bind ?element (read ?rtr))
+				(bind ?index (+ ?index 1)))
+		 (close ?rtr))
 (defclass iris-node
   (is-a USER)
   (slot type
