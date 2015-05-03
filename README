@@ -1,0 +1,7 @@
+Iris3 is a research project to see what it is like to have a language based
+computer like a LISP machine. Interestingly enough the language I'm using is
+CLIPS which is a lisp language. The difference is that CLIPS is a language for
+writing expert systems so that will be interesting to translate.
+
+The primary language of iris3 is LISP but there is an underlying
+microarchitecture that will be very much in flux.
