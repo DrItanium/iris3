@@ -40,7 +40,8 @@
 		 (retract ?f)
 		 (bind ?name (gensym*))
 		 (if (open ?file ?name "r") then
-		   (assert (read elements from ?name))
+		   (assert (read elements from ?name)
+				   (translation ?name to ?file))
 		   else
 		   (printout werror "Couldn't open " ?file crlf)))
 (defrule read-elements
@@ -55,9 +56,13 @@
 								 ?rtr)
 				(bind ?element (read ?rtr))
 				(bind ?index (+ ?index 1)))
-		 (close ?rtr))
+		 (close ?rtr)
+		 (assert (file ?rtr has ?index elements)))
 (defclass iris-node
   (is-a USER)
+  (slot parent
+		(type SYMBOL)
+		(default ?NONE))
   (slot type
 		(visibility public)
 		(type SYMBOL)
@@ -84,12 +89,15 @@
 
 (defrule lex-element->symbol
 		 ?f <- (lex-element (value ?value&:(symbolp ?value))
-							(index ?index))
+							(index ?index)
+							(parent ?parent))
+
 		 =>
 		 (retract ?f)
 		 (make-instance of iris-symbol
 						(value ?value)
-						(index ?index)))
+						(index ?index)
+						(parent ?parent)))
 
 (defclass iris-string
   (is-a iris-node)
@@ -105,12 +113,14 @@
 
 (defrule lex-element->string
 		 ?f <- (lex-element (value ?value&:(stringp ?value))
-							(index ?index))
+							(index ?index)
+							(parent ?parent))
 		 =>
 		 (retract ?f)
 		 (make-instance of iris-string
 						(value ?value)
-						(index ?index)))
+						(index ?index)
+						(parent ?parent)))
 
 (defclass iris-left-paren
   (is-a iris-node)
@@ -130,11 +140,13 @@
 (defrule lex-element->left-paren
 		 (declare (salience 1))
 		 ?f <- (lex-element (value "(")
-							(index ?index))
+							(index ?index)
+							(parent ?parent))
 		 =>
 		 (retract ?f)
 		 (make-instance of iris-left-paren
-						(index ?index)))
+						(index ?index)
+						(parent ?parent)))
 
 (defclass iris-right-paren
   (is-a iris-node)
@@ -154,11 +166,13 @@
 (defrule lex-element->right-paren
 		 (declare (salience 1))
 		 ?f <- (lex-element (value ")")
-							(index ?index))
+							(index ?index)
+							(parent ?parent))
 		 =>
 		 (retract ?f)
 		 (make-instance of iris-right-paren
-						(index ?index)))
+						(index ?index)
+						(parent ?parent)))
 
 (defclass iris-number
   (is-a iris-node)
@@ -179,110 +193,124 @@
 (defrule lex-element->pure-number
 		 (declare (salience 5))
 		 ?f <- (lex-element (value ?value&:(integerp ?value))
-							(index ?index))
+							(index ?index)
+							(parent ?parent))
 		 =>
 		 (retract ?f)
 		 (make-instance of iris-number 
 						(subtype decimal)
 						(value ?value)
-						(index ?index)))
+						(index ?index)
+						(parent ?parent)))
 
 (defrule lex-element->float-number:error
 		 (declare (salience 5))
 		 ?f <- (lex-element (value ?value&:(floatp ?value))
-							(index ?index))
-		 =>
-		 (printout werror "ERROR: floating point numbers not supported!" crlf
-				   (format nil "%d: %f%n" ?index ?value) crlf)
-		 (exit))
+							(index ?index)
+							(parent ?parent))
+		 (translation ?parent to ?path
+					  =>
+					  (printout werror "ERROR: floating point numbers not supported!" crlf
+								(format nil "%s:%d: %f%n" ?path ?index ?value) crlf)
+					  (exit))
 
-(defrule lex-element->hex-number
-		 (declare (salience 5))
-		 ?f <- (lex-element (value ?value&:(and (symbolp ?value)
-												(starts-with 0x ?value)))
-							(index ?index))
-		 =>
-		 (retract ?f)
-		 (make-instance of iris-number
-						(subtype hex)
-						(value ?value)
-						(index ?index)))
+		 (defrule lex-element->hex-number
+				  (declare (salience 5))
+				  ?f <- (lex-element (value ?value&:(and (symbolp ?value)
+														 (starts-with 0x ?value)))
+									 (index ?index)
+									 (parent ?parent))
+				  =>
+				  (retract ?f)
+				  (make-instance of iris-number
+								 (subtype hex)
+								 (value ?value)
+								 (index ?index)
+								 (parent ?parent)))
 
-(defrule lex-element->binary-number
-		 (declare (salience 5))
-		 ?f <- (lex-element (value ?value&:(and (symbolp ?value)
-												(starts-with 0b ?value)))
-							(index ?index))
-		 =>
-		 (retract ?f)
-		 (make-instance of iris-number
-						(subtype binary)
-						(value ?value)
-						(index ?index)))
+		 (defrule lex-element->binary-number
+				  (declare (salience 5))
+				  ?f <- (lex-element (value ?value&:(and (symbolp ?value)
+														 (starts-with 0b ?value)))
+									 (index ?index)
+									 (parent ?parent))
+				  =>
+				  (retract ?f)
+				  (make-instance of iris-number
+								 (subtype binary)
+								 (value ?value)
+								 (index ?index)
+								 (parent ?parent)))
 
-(defclass iris-variable
-  (is-a iris-node)
-  (slot value
-		(source composite)
-		(type LEXEME)))
+		 (defclass iris-variable
+		   (is-a iris-node)
+		   (slot value
+				 (source composite)
+				 (type LEXEME)))
 
-(defclass iris-single-variable
-  (is-a iris-variable)
-  (slot type
-		(source composite)
-		(storage shared)
-		(access read-only)
-		(create-accessor read)
-		(default single-variable)))
+		 (defclass iris-single-variable
+		   (is-a iris-variable)
+		   (slot type
+				 (source composite)
+				 (storage shared)
+				 (access read-only)
+				 (create-accessor read)
+				 (default single-variable)))
 
-(defrule lex-element->single-variable
-		 (declare (salience 1))
-		 ?f <- (lex-element (value ?value&:(and (stringp ?value)
-												(starts-with "?" ?value)))
-							(index ?index))
-		 =>
-		 (retract ?f)
-		 (make-instance of iris-single-variable
-						(index ?index)
-						(value ?value)))
+		 (defrule lex-element->single-variable
+				  (declare (salience 1))
+				  ?f <- (lex-element (value ?value&:(and (stringp ?value)
+														 (starts-with "?" ?value)))
+									 (index ?index)
+									 (parent ?parent))
+				  =>
+				  (retract ?f)
+				  (make-instance of iris-single-variable
+								 (index ?index)
+								 (value ?value)
+								 (parent ?parent)))
 
-(defclass iris-multifield-variable
-  (is-a iris-variable)
-  (slot type
-		(source composite)
-		(storage shared)
-		(access read-only)
-		(create-accessor read)
-		(default multifield-variable)))
+		 (defclass iris-multifield-variable
+		   (is-a iris-variable)
+		   (slot type
+				 (source composite)
+				 (storage shared)
+				 (access read-only)
+				 (create-accessor read)
+				 (default multifield-variable)))
 
-(defrule lex-element->multifield-variable
-		 (declare (salience 1))
-		 ?f <- (lex-element (value ?value&:(and (stringp ?value)
-												(starts-with "$?" ?value)))
-							(index ?index))
-		 =>
-		 (retract ?f)
-		 (make-instance of iris-multifield-variable
-						(index ?index)
-						(value ?value)))
+		 (defrule lex-element->multifield-variable
+				  (declare (salience 1))
+				  ?f <- (lex-element (value ?value&:(and (stringp ?value)
+														 (starts-with "$?" ?value)))
+									 (index ?index)
+									 (parent ?parent))
+				  =>
+				  (retract ?f)
+				  (make-instance of iris-multifield-variable
+								 (index ?index)
+								 (value ?value)
+								 (parent ?parent)))
 
-(defclass iris-instance-name
-  (is-a iris-node)
-  (slot type
-		(source composite)
-		(storage shared)
-		(access read-only)
-		(create-accessor read)
-		(default instance-name))
-  (slot value
-		(source composite)
-		(type INSTANCE-NAME)))
+		 (defclass iris-instance-name
+		   (is-a iris-node)
+		   (slot type
+				 (source composite)
+				 (storage shared)
+				 (access read-only)
+				 (create-accessor read)
+				 (default instance-name))
+		   (slot value
+				 (source composite)
+				 (type INSTANCE-NAME)))
 
-(defrule lex-element->instance-name
-		 ?f <- (lex-element (value ?value&:(instance-namep ?value))
-							(index ?index))
-		 =>
-		 (retract ?f)
-		 (make-instance of iris-instance-name
-						(index ?index)
-						(value ?value)))
+		 (defrule lex-element->instance-name
+				  ?f <- (lex-element (value ?value&:(instance-namep ?value))
+									 (index ?index)
+									 (parent ?parent))
+				  =>
+				  (retract ?f)
+				  (make-instance of iris-instance-name
+								 (index ?index)
+								 (value ?value)
+								 (parent ?parent)))
