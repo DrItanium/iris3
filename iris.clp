@@ -40,7 +40,7 @@
 		 (retract ?f)
 		 (bind ?name (gensym*))
 		 (if (open ?file ?name "r") then
-		   (assert (read element from ?name))
+		   (assert (read elements from ?name))
 		   else
 		   (printout werror "Couldn't open " ?file crlf)))
 (defrule read-elements
