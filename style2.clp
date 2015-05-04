@@ -28,33 +28,38 @@
                    (allowed-symbols FALSE 
                                     TRUE))
              (multislot elements))
-(defclass list
+(defclass thing
   (is-a USER)
-  (slot parent
+  (slot parent 
         (type SYMBOL)
-        (default ?NONE))
+        (default ?NONE)))
+(defclass list
+  (is-a thing)
   (multislot contents))
 (defclass match
-  (is-a USER)
-  (slot parent
-        (type SYMBOL)
-        (default ?NONE))
+  (is-a thing)
   (slot binding
         (type LEXEME))
   (multislot contents))
 
 (defclass defrule
-  (is-a USER)
-  (slot rule-name
-        (type SYMBOL)
-        (default ?NONE))
+  (is-a thing)
   (slot comment
         (type STRING))
-  (slot parent
-        (type SYMBOL)
-        (default ?NONE))
   (multislot matches)
   (multislot body))
+
+(defclass deffunction
+  (is-a thing)
+  (slot comment
+        (type STRING))
+  (multislot arguments)
+  (multislot body))
+
+(defclass defgeneric
+  (is-a thing)
+  (slot comment
+        (type STRING)))
 
 (defrule open-file
          ?f <- (open ?path)
@@ -121,12 +126,17 @@
                                  $?body))
          =>
          (unmake-instance ?f)
-         (make-instance of defrule 
-                        (rule-name ?name)
+         (make-instance ?name of defrule 
                         (comment ?comment)
                         (parent ?parent)
                         (body ?body)
                         (matches ?matches)))
+(deffunction no-strings-in-list
+             (?f) 
+             (progn$ (?a ?f) 
+                     (if (stringp ?a) then 
+                       (return FALSE)))
+             (return TRUE))
 (defrule translate-defrule:no-comment
          (declare (salience 1))
          (parse)
@@ -134,13 +144,12 @@
                        (parent ?parent)
                        (contents defrule
                                  ?name
-                                 $?matches
+                                 $?matches&:(no-strings-in-list ?matches)
                                  =>
                                  $?body))
          =>
          (unmake-instance ?f)
-         (make-instance of defrule
-                        (rule-name ?name)
+         (make-instance ?name of defrule
                         (parent ?parent)
                         (matches ?matches)
                         (body ?body)))
@@ -172,3 +181,43 @@
                           (binding ?var))
          (modify-instance ?f
                           (matches ?before ?list ?after)))
+
+
+(defrule translate-deffunction:comment
+         (parse)
+         ?f <- (object (is-a list)
+                       (parent ?parent)
+                       (contents deffunction 
+                                 ?name 
+                                 ?comment&:(stringp ?comment)
+                                 ?args
+                                 $?body))
+         ?j <- (object (is-a list)
+                       (name ?args)
+                       (contents $?a))
+         =>
+         (unmake-instance ?j)
+         (unmake-instance ?f)
+         (make-instance ?name of deffunction
+                        (parent ?parent)
+                        (comment ?comment)
+                        (arguments ?a)
+                        (body ?body)))
+(defrule translate-deffunction:no-comment
+         (parse)
+         ?f <- (object (is-a list)
+                       (parent ?parent)
+                       (contents deffunction 
+                                 ?name 
+                                 ?args
+                                 $?body))
+         ?j <- (object (is-a list)
+                       (name ?args)
+                       (contents $?a))
+         =>
+         (unmake-instance ?j)
+         (unmake-instance ?f)
+         (make-instance ?name of deffunction
+                        (parent ?parent)
+                        (arguments ?a)
+                        (body ?body)))
