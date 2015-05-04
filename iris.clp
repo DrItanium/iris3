@@ -175,15 +175,56 @@
          ; the deffacts. This doesn't actually have to go last....
          (retract ?f)
          (undeffacts ?name))
+
+(defrule build-subsymbol-type
+         (stage (current startup))
+         ?f <- (defsubsymbol-type ?symbol ?type)
+         =>
+         (retract ?f)
+         (bind ?clazz 
+               (format nil "(defclass iris-symbol-%s
+                              (is-a iris-symbol)
+                              (slot type 
+                                    (source composite)
+                                    (default %s))
+                              (slot value 
+                                    (source composite)
+                                    (storage shared)
+                                    (access read-only)
+                                    (create-accessor read)
+                                    (default %s)))" 
+                       ?type 
+                       ?type 
+                       ?symbol))
+         (build ?clazz)
+         (build (format nil "
+                        (defrule lex-element->iris-symbol-%s
+                                 (declare (salience ?*priority2*))
+                                 ?f <- (lex-element (value %s)
+                                                    (index ?index)
+                                                    (parent ?parent))
+                                 =>
+                                 (retract ?f)
+                                 (make-instance of iris-symbol-%s (parent ?parent)
+                                                (index ?index)))"
+                        ?type
+                        ?symbol
+                        ?type)))
+
 (defclass iris-node
   (is-a USER)
+  (role abstract)
+  (pattern-match non-reactive)
   (slot parent
         (type SYMBOL)
         (default ?NONE))
   (slot type
         (visibility public)
         (type SYMBOL)
-        (default ?NONE))
+        (storage shared)
+        (access read-only)
+        (create-accessor read)
+        (default nil))
   (slot index
         (visibility public)
         (range 0 ?VARIABLE)
@@ -196,23 +237,83 @@
 
 (defclass iris-symbol
   (is-a iris-node)
+  (role concrete)
+  (pattern-match reactive)
   (slot type
         (source composite)
-        (storage shared)
-        (access read-only)
-        (create-accessor read)
         (default symbol))
   (slot value
         (source composite)
         (type SYMBOL)))
-
+; some extra symbols
+; :, &, |, ~
 (deffacts initialization-iris-symbol
           (delete deffacts initialization-iris-symbol)
           (build-standard-lex-rule iris-symbol
-                                   symbolp))
+                                   symbolp)
+          (defsubsymbol-type + 
+                             add)
+          (defsubsymbol-type - 
+                             subtract)
+          (defsubsymbol-type / 
+                             divide)
+          (defsubsymbol-type div 
+                             integer-divide)
+          (defsubsymbol-type * 
+                             multiply)
+          (defsubsymbol-type < 
+                             less-than)
+          (defsubsymbol-type <= 
+                             less-than-or-equal)
+          (defsubsymbol-type > 
+                             greater-than)
+          (defsubsymbol-type >= 
+                             greater-than-or-equal)
+          (defsubsymbol-type <> 
+                             not-integer-equals)
+          (defsubsymbol-type eq 
+                             equals)
+          (defsubsymbol-type neq 
+                             not-equals)
+          (defsubsymbol-type bind 
+                             bind-variable)
+          (defsubsymbol-type not 
+                             logical-not)
+          (defsubsymbol-type and 
+                             logical-and)
+          (defsubsymbol-type or 
+                             logical-or)
+          (defsubsymbol-type deffunction 
+                             define-function)
+          (defsubsymbol-type defrule 
+                             define-rule)
+          (defsubsymbol-type defgeneric 
+                             define-generic)
+          (defsubsymbol-type defmethod 
+                             define-method)
+          (defsubsymbol-type defmessage-handler 
+                             define-message-handler)
+          (defsubsymbol-type defclass 
+                             define-class)
+          (defsubsymbol-type progn 
+                             progn)
+          (defsubsymbol-type progn$ 
+                             progn$)
+          (defsubsymbol-type if 
+                             if-statement)
+          (defsubsymbol-type defglobal 
+                             define-global)
+          (defsubsymbol-type create$ 
+                             create-multifield)
+          (defsubsymbol-type mod 
+                             modulus)
+          )
+
 
 (defclass iris-string
   (is-a iris-node)
+  (role concrete)
+  (pattern-match reactive)
   (slot type
         (source composite)
         (storage shared)
@@ -230,11 +331,10 @@
 
 (defclass iris-left-paren
   (is-a iris-node)
+  (role concrete)
+  (pattern-match reactive)
   (slot type
         (source composite)
-        (storage shared)
-        (access read-only)
-        (create-accessor read)
         (default left-paren))
   (slot value
         (source composite)
@@ -257,11 +357,10 @@
 
 (defclass iris-right-paren
   (is-a iris-node)
+  (role concrete)
+  (pattern-match reactive)
   (slot type
         (source composite)
-        (storage shared)
-        (access read-only)
-        (create-accessor read)
         (default right-paren))
   (slot value
         (source composite)
@@ -284,11 +383,10 @@
 
 (defclass iris-integer
   (is-a iris-node)
+  (role concrete)
+  (pattern-match reactive)
   (slot type
         (source composite)
-        (storage shared)
-        (access read-only)
-        (create-accessor read)
         (default integer))
   (slot subtype
         (type SYMBOL)
@@ -344,11 +442,10 @@
                         (parent ?parent)))
 (defclass iris-float
   (is-a iris-node)
+  (role concrete)
+  (pattern-match reactive)
   (slot type
         (source composite)
-        (storage shared)
-        (access read-only)
-        (create-accessor read)
         (default float))
   (slot value
         (source composite)
@@ -361,6 +458,8 @@
 
 (defclass iris-variable
   (is-a iris-node)
+  (role concrete)
+  (pattern-match reactive)
   (slot value
         (source composite)
         (type LEXEME)))
@@ -369,9 +468,6 @@
   (is-a iris-variable)
   (slot type
         (source composite)
-        (storage shared)
-        (access read-only)
-        (create-accessor read)
         (default single-variable)))
 
 (defrule lex-element->single-variable
@@ -393,9 +489,6 @@
   (is-a iris-variable)
   (slot type
         (source composite)
-        (storage shared)
-        (access read-only)
-        (create-accessor read)
         (default multifield-variable)))
 
 (defrule lex-element->multifield-variable
@@ -415,11 +508,10 @@
 
 (defclass iris-instance-name
   (is-a iris-node)
+  (role concrete)
+  (pattern-match reactive)
   (slot type
         (source composite)
-        (storage shared)
-        (access read-only)
-        (create-accessor read)
         (default instance-name))
   (slot value
         (source composite)
@@ -431,12 +523,11 @@
                                    instance-namep))
 
 (defclass iris-instance-address
- (is-a iris-node)
+  (is-a iris-node)
+  (role concrete)
+  (pattern-match reactive)
   (slot type
         (source composite)
-        (storage shared)
-        (access read-only)
-        (create-accessor read)
         (default instance-address))
   (slot value
         (source composite)
@@ -448,12 +539,11 @@
                                    instance-addressp))
 
 (defclass iris-fact-address
- (is-a iris-node)
+  (is-a iris-node)
+  (role concrete)
+  (pattern-match reactive)
   (slot type
         (source composite)
-        (storage shared)
-        (access read-only)
-        (create-accessor read)
         (default fact-address))
   (slot value
         (source composite)
@@ -465,12 +555,11 @@
                                    fact-addressp))
 
 (defclass iris-external-address
- (is-a iris-node)
+  (is-a iris-node)
+  (role concrete)
+  (pattern-match reactive)
   (slot type
         (source composite)
-        (storage shared)
-        (access read-only)
-        (create-accessor read)
         (default external-address))
   (slot value
         (source composite)
