@@ -33,6 +33,10 @@
   (slot parent 
         (type SYMBOL)
         (default ?NONE)))
+(defclass has-comment
+  (is-a USER)
+  (slot comment
+        (type STRING)))
 (defclass list
   (is-a thing)
   (multislot contents))
@@ -43,35 +47,49 @@
   (multislot contents))
 
 (defclass defrule
-  (is-a thing)
-  (slot comment
-        (type STRING))
+  (is-a thing
+        has-comment)
   (multislot matches)
   (multislot body))
 
 (defclass deffunction
-  (is-a thing)
-  (slot comment
-        (type STRING))
+  (is-a thing
+        has-comment)
   (multislot arguments)
   (multislot body))
 
 (defclass defgeneric
+  (is-a thing
+        has-comment))
+
+(defclass defmethod
+  (is-a thing
+        has-comment)
+  (slot index 
+        (type INTEGER))
+  (multislot args)
+  (multislot body))
+
+(defclass defglobal
   (is-a thing)
-  (slot comment
-        (type STRING)))
-(defclass slot
+  (slot module-name
+        (type SYMBOL))
+  (multislot assignments))
+(defclass deftemplate
+  (is-a thing
+        has-comment)
+  (multislot slots))
+(defclass generic-slot
   (is-a thing)
-  (slot slot-name 
+  (slot slot-name
         (type SYMBOL)
         (default ?NONE))
   (multislot facets))
-(defclass multislot
-  (is-a thing)
-  (slot slot-name 
-        (type SYMBOL)
-        (default ?NONE))
-  (multislot facets))
+(defclass slot 
+  (is-a generic-slot))
+(defclass multislot 
+  (is-a generic-slot))
+
 (defclass message-handler-documentation
   (is-a thing)
   (slot handler-name
@@ -84,9 +102,8 @@
                          before 
                          after)))
 (defclass defclass
-  (is-a thing)
-  (slot comment
-        (type STRING))
+  (is-a thing
+        has-comment)
   (multislot inherits-from)
   (slot role
         (type SYMBOL)
@@ -348,8 +365,8 @@
 (defrule translate-defclass:convert-message-handler-documentation:no-type
          (parse)
          ?f <- (object (is-a defclass)
-                       (parent ?parent)
-                       (contents $?before ?curr $?after))
+                       (contents $?before ?curr $?after)
+                       (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
                        (contents message-handler ?name))
@@ -362,8 +379,8 @@
 (defrule translate-defclass:convert-message-handler-documentation:type
          (parse)
          ?f <- (object (is-a defclass)
-                       (parent ?parent)
-                       (contents $?before ?curr $?after))
+                       (contents $?before ?curr $?after)
+                       (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
                        (contents message-handler ?name ?type))
@@ -379,11 +396,11 @@
 (defrule translate-defclass:convert-slot
          (parse)
          ?f <- (object (is-a defclass)
-                       (parent ?parent)
-                       (contents $?before ?curr $?after))
+                       (contents $?before ?curr $?after)
+                       (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
-                       (contents slot ?name $?rest))
+                       (contents slot|single-slot ?name $?rest))
          =>
          (unmake-instance ?q)
          (modify-instance ?f (contents ?before (make-instance of slot 
@@ -396,8 +413,8 @@
 (defrule translate-defclass:convert-multislot
          (parse)
          ?f <- (object (is-a defclass)
-                       (parent ?parent)
-                       (contents $?before ?curr $?after))
+                       (contents $?before ?curr $?after)
+                       (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
                        (contents multislot ?name $?rest))
