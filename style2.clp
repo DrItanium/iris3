@@ -72,9 +72,16 @@
 
 (defclass defglobal
   (is-a thing)
-  (slot module-name
+  (slot module 
         (type SYMBOL))
   (multislot assignments))
+(defclass defglobal-assignment
+  (is-a thing)
+  (slot variable 
+        (type STRING)
+        (default ?NONE))
+  (slot value
+        (default ?NONE)))
 (defclass deftemplate
   (is-a thing
         has-comment)
@@ -426,3 +433,44 @@
                                                               (facets ?rest))
 
                                        ?after)))
+
+(defrule translate-defglobal:module
+         (parse)
+         ?f <- (object (is-a list)
+                       (contents defglobal 
+                                 ?module&:(symbolp ?module)
+                                 $?rest)
+                       (parent ?parent))
+         =>
+         (unmake-instance ?f)
+         (make-instance of defglobal
+                        (parent ?parent)
+                        (module ?module)
+                        (assignments ?rest)))
+
+(defrule translate-defglobal:no-module
+         (parse)
+         ?f <- (object (is-a list)
+                       (contents defglobal 
+                                 $?rest)
+                       (parent ?parent))
+         =>
+         (unmake-instance ?f)
+         (make-instance of defglobal
+                        (parent ?parent)
+                        (assignments ?rest)))
+
+(defrule build-defglobal-assignment
+         (parse)
+         ?f <- (object (is-a defglobal)
+                       (assignments $?before 
+                                    ?var =(string-to-field "=") ?value 
+                                    $?rest)
+                       (name ?parent))
+         =>
+         (modify-instance ?f (assignments ?before
+                                          (make-instance of defglobal-assignment
+                                                         (parent ?parent)
+                                                         (variable ?var)
+                                                         (value ?value))
+                                          ?rest)))
