@@ -60,6 +60,43 @@
   (is-a thing)
   (slot comment
         (type STRING)))
+(defclass slot
+  (is-a thing)
+  (slot slot-name 
+        (type SYMBOL)
+        (default ?NONE))
+  (multislot facets))
+(defclass multislot
+  (is-a thing)
+  (slot slot-name 
+        (type SYMBOL)
+        (default ?NONE))
+  (multislot facets))
+(defclass message-handler-documentation
+  (is-a thing)
+  (slot handler-name
+        (type SYMBOL)
+        (default ?NONE))
+  (slot handler-type
+        (type SYMBOL)
+        (allowed-symbols primary 
+                         around 
+                         before 
+                         after)))
+(defclass defclass
+  (is-a thing)
+  (slot comment
+        (type STRING))
+  (multislot inherits-from)
+  (slot role
+        (type SYMBOL)
+        (allowed-symbols concrete 
+                         abstract))
+  (slot pattern-match-role
+        (type SYMBOL)
+        (allowed-symbols reactive 
+                         non-reactive))
+  (multislot contents))
 
 (defrule open-file
          ?f <- (open ?path)
@@ -196,8 +233,7 @@
                        (name ?args)
                        (contents $?a))
          =>
-         (unmake-instance ?j)
-         (unmake-instance ?f)
+         (unmake-instance ?j ?f)
          (make-instance ?name of deffunction
                         (parent ?parent)
                         (comment ?comment)
@@ -215,9 +251,161 @@
                        (name ?args)
                        (contents $?a))
          =>
-         (unmake-instance ?j)
-         (unmake-instance ?f)
+         (unmake-instance ?j ?f)
          (make-instance ?name of deffunction
                         (parent ?parent)
                         (arguments ?a)
                         (body ?body)))
+
+(defrule translate-defgeneric:no-comment
+         (parse)
+         ?f <- (object (is-a list)
+                       (parent ?parent)
+                       (contents defgeneric
+                                 ?name))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?name of defgeneric 
+                        (parent ?parent)))
+(defrule translate-defgeneric:comment
+         (parse)
+         ?f <- (object (is-a list)
+                       (parent ?parent)
+                       (contents defgeneric
+                                 ?name
+                                 ?comment))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?name of defgeneric 
+                        (comment ?comment)
+                        (parent ?parent)))
+(defrule translate-defclass:comment
+         (parse)
+         ?f <- (object (is-a list)
+                       (parent ?parent)
+                       (contents defclass 
+                                 ?name
+                                 ?comment&:(stringp ?comment)
+                                 ?is-a
+                                 $?rest))
+         ?f2 <- (object (is-a list)
+                        (name ?is-a)
+                        (contents is-a $?ia))
+         =>
+         (unmake-instance ?f ?f2)
+         (make-instance ?name of defclass
+                        (parent ?parent)
+                        (comment ?comment)
+                        (inherits-from ?ia)
+                        (contents ?rest)))
+
+
+(defrule translate-defclass:no-comment
+         (parse)
+         ?f <- (object (is-a list)
+                       (parent ?parent)
+                       (contents defclass 
+                                 ?name
+                                 ?is-a
+                                 $?rest))
+         ?f2 <- (object (is-a list)
+                        (name ?is-a)
+                        (contents is-a $?ia))
+         =>
+         (unmake-instance ?f ?f2)
+         (make-instance ?name of defclass
+                        (parent ?parent)
+                        (inherits-from ?ia)
+                        (contents ?rest)))
+
+
+
+(defrule translate-defclass:populate-role
+         (parse)
+         ?f <- (object (is-a defclass)
+                       (contents ?first
+                                 $?rest))
+         ?q <- (object (is-a list)
+                       (name ?first)
+                       (contents role ?role))
+         =>
+         (unmake-instance ?q)
+         (modify-instance ?f (role ?role)
+                          (contents ?rest)))
+(defrule translate-defclass:populate-pattern-match
+         (parse)
+         ?f <- (object (is-a defclass)
+                       (contents ?first 
+                                 $?rest))
+         ?q <- (object (is-a list)
+                       (name ?first)
+                       (contents pattern-match ?pattern-match))
+         =>
+         (unmake-instance ?q)
+         (modify-instance ?f (pattern-match ?pattern-match)
+                          (contents ?rest)))
+
+(defrule translate-defclass:convert-message-handler-documentation:no-type
+         (parse)
+         ?f <- (object (is-a defclass)
+                       (parent ?parent)
+                       (contents $?before ?curr $?after))
+         ?q <- (object (is-a list)
+                       (name ?curr)
+                       (contents message-handler ?name))
+         =>
+         (unmake-instance ?q)
+         (modify-instance ?f (contents ?before (make-instance of message-handler-documentation
+                                                              (parent ?parent)
+                                                              (handler-name ?name)) 
+                                       ?after)))
+(defrule translate-defclass:convert-message-handler-documentation:type
+         (parse)
+         ?f <- (object (is-a defclass)
+                       (parent ?parent)
+                       (contents $?before ?curr $?after))
+         ?q <- (object (is-a list)
+                       (name ?curr)
+                       (contents message-handler ?name ?type))
+         =>
+         (unmake-instance ?q)
+         (modify-instance ?f (contents ?before (make-instance of message-handler-documentation
+                                                              (parent ?parent)
+                                                              (handler-name ?name)
+                                                              (handler-type ?type))
+
+                                       ?after)))
+
+(defrule translate-defclass:convert-slot
+         (parse)
+         ?f <- (object (is-a defclass)
+                       (parent ?parent)
+                       (contents $?before ?curr $?after))
+         ?q <- (object (is-a list)
+                       (name ?curr)
+                       (contents slot ?name $?rest))
+         =>
+         (unmake-instance ?q)
+         (modify-instance ?f (contents ?before (make-instance of slot 
+                                                              (slot-name ?name)
+                                                              (parent ?parent)
+                                                              (facets ?rest))
+
+                                       ?after)))
+
+(defrule translate-defclass:convert-multislot
+         (parse)
+         ?f <- (object (is-a defclass)
+                       (parent ?parent)
+                       (contents $?before ?curr $?after))
+         ?q <- (object (is-a list)
+                       (name ?curr)
+                       (contents multislot ?name $?rest))
+         =>
+         (unmake-instance ?q)
+         (modify-instance ?f (contents ?before (make-instance of multislot 
+                                                              (slot-name ?name)
+                                                              (parent ?parent)
+                                                              (facets ?rest))
+
+                                       ?after)))
