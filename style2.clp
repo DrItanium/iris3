@@ -153,8 +153,10 @@
 (defrule mark-sub-list
          (declare (salience 1))
          ?f <- (lexer (elements $?before 
-                                "(" $?inner&:(and (not (member$ ")" ?inner))
-                                                  (not (member$ "(" ?inner))) 
+                                "(" $?inner&:(and (not (member$ ")" 
+                                                                ?inner))
+                                                  (not (member$ "(" 
+                                                                ?inner))) 
                                 ")" 
                                 $?after)
                       (router ?parent))
@@ -225,11 +227,12 @@
                        (contents $?contents))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f (matches $?before 
-                                      (instance-name (make-instance of match
-                                                                    (parent ?parent)
-                                                                    (contents ?contents))) 
-                                      $?after)))
+         (modify-instance ?f 
+                          (matches $?before 
+                                   (instance-name (make-instance of match
+                                                                 (parent ?parent)
+                                                                 (contents ?contents))) 
+                                   $?after)))
 
 (defrule translate-match:binding
          (parse)
@@ -354,7 +357,8 @@
                        (contents role ?role))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f (role ?role)
+         (modify-instance ?f 
+                          (role ?role)
                           (contents ?rest)))
 (defrule translate-defclass:populate-pattern-match
          (parse)
@@ -366,7 +370,8 @@
                        (contents pattern-match ?pattern-match))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f (pattern-match ?pattern-match)
+         (modify-instance ?f 
+                          (pattern-match ?pattern-match)
                           (contents ?rest)))
 
 (defrule translate-defclass:convert-message-handler-documentation:no-type
@@ -393,12 +398,14 @@
                        (contents message-handler ?name ?type))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f (contents ?before (make-instance of message-handler-documentation
-                                                              (parent ?parent)
-                                                              (handler-name ?name)
-                                                              (handler-type ?type))
+         (modify-instance ?f 
+                          (contents ?before 
+                                    (make-instance of message-handler-documentation
+                                                   (parent ?parent)
+                                                   (handler-name ?name)
+                                                   (handler-type ?type))
 
-                                       ?after)))
+                                    ?after)))
 
 (defrule translate-defclass:convert-slot
          (parse)
@@ -410,12 +417,14 @@
                        (contents slot|single-slot ?name $?rest))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f (contents ?before (make-instance of slot 
-                                                              (slot-name ?name)
-                                                              (parent ?parent)
-                                                              (facets ?rest))
+         (modify-instance ?f 
+                          (contents ?before 
+                                    (make-instance of slot 
+                                                   (slot-name ?name)
+                                                   (parent ?parent)
+                                                   (facets ?rest))
 
-                                       ?after)))
+                                    ?after)))
 
 (defrule translate-defclass:convert-multislot
          (parse)
@@ -427,12 +436,14 @@
                        (contents multislot ?name $?rest))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f (contents ?before (make-instance of multislot 
-                                                              (slot-name ?name)
-                                                              (parent ?parent)
-                                                              (facets ?rest))
+         (modify-instance ?f 
+                          (contents ?before 
+                                    (make-instance of multislot 
+                                                   (slot-name ?name)
+                                                   (parent ?parent)
+                                                   (facets ?rest))
 
-                                       ?after)))
+                                    ?after)))
 
 (defrule translate-defglobal:module
          (parse)
@@ -468,9 +479,10 @@
                                     $?rest)
                        (name ?parent))
          =>
-         (modify-instance ?f (assignments ?before
-                                          (make-instance of defglobal-assignment
-                                                         (parent ?parent)
-                                                         (variable ?var)
-                                                         (value ?value))
-                                          ?rest)))
+         (modify-instance ?f 
+                          (assignments ?before
+                                       (make-instance of defglobal-assignment
+                                                      (parent ?parent)
+                                                      (variable ?var)
+                                                      (value ?value))
+                                       ?rest)))
