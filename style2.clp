@@ -86,16 +86,6 @@
   (is-a thing
         has-comment)
   (multislot slots))
-(defclass generic-slot
-  (is-a thing)
-  (slot slot-name
-        (type SYMBOL)
-        (default ?NONE))
-  (multislot facets))
-(defclass slot 
-  (is-a generic-slot))
-(defclass multislot 
-  (is-a generic-slot))
 
 (defclass message-handler-documentation
   (is-a thing)
@@ -220,10 +210,10 @@
 (defrule translate-match:no-binding
          (parse)
          ?f <- (object (is-a defrule)
+                       (name ?parent)
                        (matches $?before ?list $?after))
          ?q <- (object (is-a list)
                        (name ?list)
-                       (parent ?parent)
                        (contents $?contents))
          =>
          (unmake-instance ?q)
@@ -250,7 +240,7 @@
 (defrule translate-deffunction:comment
          (parse)
          ?f <- (object (is-a list)
-                       (parent ?parent)
+                       (name ?parent)
                        (contents deffunction 
                                  ?name 
                                  ?comment&:(stringp ?comment)
@@ -407,43 +397,6 @@
 
                                     ?after)))
 
-(defrule translate-defclass:convert-slot
-         (parse)
-         ?f <- (object (is-a defclass)
-                       (contents $?before ?curr $?after)
-                       (name ?parent))
-         ?q <- (object (is-a list)
-                       (name ?curr)
-                       (contents slot|single-slot ?name $?rest))
-         =>
-         (unmake-instance ?q)
-         (modify-instance ?f 
-                          (contents ?before 
-                                    (make-instance of slot 
-                                                   (slot-name ?name)
-                                                   (parent ?parent)
-                                                   (facets ?rest))
-
-                                    ?after)))
-
-(defrule translate-defclass:convert-multislot
-         (parse)
-         ?f <- (object (is-a defclass)
-                       (contents $?before ?curr $?after)
-                       (name ?parent))
-         ?q <- (object (is-a list)
-                       (name ?curr)
-                       (contents multislot ?name $?rest))
-         =>
-         (unmake-instance ?q)
-         (modify-instance ?f 
-                          (contents ?before 
-                                    (make-instance of multislot 
-                                                   (slot-name ?name)
-                                                   (parent ?parent)
-                                                   (facets ?rest))
-
-                                    ?after)))
 
 (defrule translate-defglobal:module
          (parse)
@@ -643,3 +596,443 @@
                           (module-name ?module-name)
                           (construct ?construct)
                           (qualifiers ?qualifiers)))
+(defclass default-facet
+  (is-a thing)
+  (role abstract)
+  (pattern-match non-reactive)
+  (multislot expressions))
+
+(defclass default
+  (is-a default-facet)
+  (role concrete)
+  (pattern-match reactive)
+  ; define the ?DERIVE, ?NONE thingy
+  (slot variable
+        (type LEXEME)
+        (allowed-symbols undefined
+                         nil)
+        (allowed-strings "?DERIVE"
+                         "?NONE")
+        (default-dynamic undefined)))
+
+(defclass default-dynamic
+ (is-a default-facet)
+ (role concrete)
+ (pattern-match reactive))
+(defclass basic-slot
+  (is-a thing)
+  (role abstract)
+  (pattern-match non-reactive)
+  (slot slot-name
+        (type SYMBOL)
+        (default ?NONE))
+  (slot default-value
+        (type SYMBOL INSTANCE)
+        (allowed-symbols undefined
+                         nil)
+        (allowed-classes default
+                         default-dynamic)
+        (default-dynamic undefined))
+  (multislot type
+             (type LEXEME)
+             (cardinality 1 
+                          ?VARIABLE)
+             (allowed-symbols SYMBOL
+                              STRING
+                              LEXEME
+                              FLOAT
+                              NUMBER
+                              INSTANCE-NAME
+                              INSTANCE-ADDRESS
+                              INSTANCE
+                              EXTERNAL-ADDRESS
+                              FACT-ADDRESS)
+             (allowed-strings "?VARIABLE")
+             (default-dynamic "?VARIABLE"))
+  (multislot allowed-symbols
+             (type LEXEME)
+             (cardinality 1
+                          ?VARIABLE)
+             (allowed-strings "?VARIABLE")
+             (default-dynamic "?VARIABLE"))
+  (multislot allowed-strings
+             (type STRING)
+             (cardinality 1
+                          ?VARIABLE)
+             (default-dynamic "?VARIABLE"))
+  (multislot allowed-lexemes
+             (type LEXEME)
+             (cardinality 1 
+                          ?VARIABLE)
+             (default-dynamic "?VARIABLE"))
+  (multislot allowed-integers
+             (type INTEGER 
+              STRING)
+             (cardinality 1 
+                          ?VARIABLE)
+             (allowed-strings "?VARIABLE")
+             (default-dynamic "?VARIABLE"))
+  (multislot allowed-float
+             (type FLOAT 
+              STRING)
+             (cardinality 1 
+                          ?VARIABLE)
+             (allowed-strings "?VARIABLE")
+             (default-dynamic "?VARIABLE"))
+  (multislot allowed-numbers
+             (type NUMBER 
+              STRING)
+             (cardinality 1 
+                          ?VARIABLE)
+             (allowed-strings "?VARIABLE")
+             (default-dynamic "?VARIABLE"))
+  (multislot allowed-instance-names
+             (type INSTANCE-NAME 
+              STRING)
+             (cardinality 1
+                          ?VARIABLE)
+             (allowed-strings "?VARIABLE")
+             (default-dynamic "?VARIABLE"))
+  (multislot allowed-classes
+             (type LEXEME)
+             (cardinality 1
+                          ?VARIABLE)
+             (allowed-strings "?VARIABLE")
+             (default-dynamic "?VARIABLE"))
+  (multislot allowed-values
+             (type LEXEME 
+                   NUMBER
+                   INSTANCE-NAME)
+             (cardinality 1
+                          ?VARIABLE)
+             (default-dynamic "?VARIABLE"))
+  (multislot range
+             (type NUMBER
+                   STRING)
+             (cardinality 2 
+                          2)
+             (allowed-strings "?VARIABLE")
+             (default-dynamic "?VARIABLE"
+                              "?VARIABLE"))
+  (multislot cardinality
+             (type INTEGER
+                   STRING)
+             (cardinality 2 
+                          2)
+             (allowed-strings "?VARIABLE")
+             (default-dynamic "?VARIABLE"
+                              "?VARIABLE"))
+
+
+  )
+
+
+(defclass defclass-slot
+  (is-a basic-slot)
+  (role abstract)
+  (pattern-match non-reactive)
+  (slot storage
+        (type SYMBOL)
+        (allowed-symbols local
+                         shared))
+  (slot access
+        (type SYMBOL)
+        (allowed-symbols read-write
+                         read-only
+                         initialize-only))
+  (slot propagation 
+        (type SYMBOL)
+        (allowed-symbols inherit
+                         no-inherit))
+  (slot source
+        (type SYMBOL)
+        (allowed-symbols exclusive
+                         composite))
+  (slot pattern-match
+        (type SYMBOL)
+        (allowed-symbols reactive
+                         non-reactive))
+  (slot visibility
+        (type SYMBOL)
+        (allowed-symbols private
+                         public))
+  (slot create-accessor
+        (type LEXEME)
+        (allowed-strings "?NONE")
+        (allowed-symbols read
+                         write
+                         read-write)
+        (default-dynamic read-write))
+  (slot override-message
+        (type LEXEME)
+        (allowed-strings "?DEFAULT")
+        (default-dynamic "?DEFAULT"))
+  (multislot facets))
+
+(defclass defclass-single-slot
+  (is-a defclass-slot)
+  (role concrete)
+  (pattern-match reactive))
+
+(defclass defclass-multislot
+  (is-a defclass-slot)
+  (role concrete)
+  (pattern-match reactive))
+
+(defclass deftemplate-slot
+  (is-a basic-slot)
+  (role abstract)
+  (pattern-match non-reactive))
+
+(defclass deftemplate-single-slot 
+  (is-a deftemplate-slot)
+  (role concrete)
+  (pattern-match reactive))
+
+(defclass deftemplate-multislot
+  (is-a deftemplate-slot)
+  (role concrete)
+  (pattern-match reactive))
+
+(defrule translate-defclass:convert-slot
+         (parse)
+         ?f <- (object (is-a defclass)
+                       (contents $?before ?curr $?after)
+                       (name ?parent))
+         ?q <- (object (is-a list)
+                       (name ?curr)
+                       (contents slot|single-slot ?name $?rest))
+         =>
+         (unmake-instance ?q)
+         (modify-instance ?f 
+                          (contents ?before 
+                                    (make-instance of defclass-single-slot
+                                                   (slot-name ?name)
+                                                   (parent ?parent)
+                                                   (facets ?rest))
+
+                                    ?after)))
+(defrule translate-slot:type
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents type 
+                                  ?first
+                                  $?types))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f
+                          (facets $?a $?b)
+                          (type ?first
+                                $?types)))
+
+(defrule translate-slot:range
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents range 
+                                  ?from 
+                                  ?to))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f
+                          (facets $?a $?b)
+                          (range ?from
+                                 ?to)))
+
+(defrule translate-slot:cardinality
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents cardinality 
+                                  ?from 
+                                  ?to))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f
+                          (facets $?a $?b)
+                          (cardinality ?from
+                                       ?to)))
+
+(defrule translate-slot:allowed-symbols
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents allowed-symbols
+                                  ?first
+                                  $?rest))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (allowed-symbols ?first 
+                                           $?rest)))
+
+(defrule translate-slot:allowed-strings
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents allowed-strings
+                                  ?first
+                                  $?rest))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (allowed-strings ?first 
+                                           $?rest)))
+
+(defrule translate-slot:allowed-lexemes
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents allowed-lexemes
+                                  ?first
+                                  $?rest))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (allowed-lexemes ?first 
+                                           $?rest)))
+
+(defrule translate-slot:allowed-integers
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents allowed-integers
+                                  ?first
+                                  $?rest))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (allowed-integers ?first 
+                                           $?rest)))
+
+(defrule translate-slot:allowed-floats
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents allowed-floats
+                                  ?first
+                                  $?rest))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (allowed-floats ?first 
+                                           $?rest)))
+
+(defrule translate-slot:allowed-numbers
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents allowed-numbers
+                                  ?first
+                                  $?rest))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (allowed-numbers ?first 
+                                           $?rest)))
+(defrule translate-slot:allowed-instance-names
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents allowed-instance-names
+                                  ?first
+                                  $?rest))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (allowed-instance-names ?first 
+                                           $?rest)))
+
+(defrule translate-slot:allowed-classes
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents allowed-classes
+                                  ?first
+                                  $?rest))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (allowed-classes ?first 
+                                           $?rest)))
+(defrule translate-slot:allowed-values
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents allowed-values
+                                  ?first
+                                  $?rest))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (allowed-values ?first 
+                                           $?rest)))
+
+(defrule translate-defclass:convert-multislot
+         (parse)
+         ?f <- (object (is-a defclass)
+                       (contents $?before ?curr $?after)
+                       (name ?parent))
+         ?q <- (object (is-a list)
+                       (name ?curr)
+                       (contents multislot ?name $?rest))
+         =>
+         (unmake-instance ?q)
+         (modify-instance ?f 
+                          (contents ?before 
+                                    (make-instance of defclass-multislot 
+                                                   (slot-name ?name)
+                                                   (parent ?parent)
+                                                   (facets ?rest))
+
+                                    ?after)))
+
