@@ -364,6 +364,73 @@
                         (body ?body)
                         (matches ?matches)))
 
+(defrule translate-defrule:comment:decl:both-salience-second
+         (declare (salience 1))
+         (parse)
+         ?f <- (object (is-a list)
+                       (parent ?parent)
+                       (contents defrule 
+                                 ?name 
+                                 ?comment&:(stringp ?comment)
+                                 ?decl
+                                 $?matches
+                                 =>
+                                 $?body))
+         ?f2 <- (object (is-a list)
+                        (name ?decl)
+                        (contents declare 
+                                  ?auto-focus-list
+                                  ?salience-list))
+         ?f3 <- (object (is-a list)
+                        (name ?salience-list)
+                        (contents salience
+                                  ?salience))
+         ?f4 <- (object (is-a list)
+                        (name ?auto-focus-list)
+                        (contents auto-focus 
+                                  ?auto-focus))
+         =>
+         (unmake-instance ?f ?f2 ?f3 ?f4)
+         (make-instance ?name of defrule 
+                        (salience ?salience)
+                        (auto-focus ?auto-focus)
+                        (comment ?comment)
+                        (parent ?parent)
+                        (body ?body)
+                        (matches ?matches)))
+
+(defrule translate-defrule:no-comment:decl:both-salience-first
+         (declare (salience 1))
+         (parse)
+         ?f <- (object (is-a list)
+                       (parent ?parent)
+                       (contents defrule
+                                 ?name
+                                 ?decl
+                                 $?matches&:(no-strings-in-list ?matches)
+                                 =>
+                                 $?body))
+         ?f2 <- (object (is-a list)
+                        (name ?decl)
+                        (contents declare
+                                  ?salience-list
+                                  ?auto-focus-list))
+         ?f3 <- (object (is-a list)
+                        (name ?auto-focus-list)
+                        (contents auto-focus 
+                                  ?auto-focus))
+         ?f4 <- (object (is-a list)
+                        (name ?salience-list)
+                        (contents salience 
+                                  ?salience))
+         =>
+         (unmake-instance ?f ?f2 ?f3 ?f4)
+         (make-instance ?name of defrule
+                        (salience ?salience)
+                        (auto-focus ?auto-focus)
+                        (parent ?parent)
+                        (matches ?matches)
+                        (body ?body)))
 (defrule translate-defrule:no-comment:decl:both-salience-second
          (declare (salience 1))
          (parse)
@@ -396,7 +463,7 @@
                         (parent ?parent)
                         (matches ?matches)
                         (body ?body)))
-     
+
 (defrule translate-match:no-binding
          (parse)
          ?f <- (object (is-a defrule)
@@ -803,7 +870,7 @@
                          nil)
         (allowed-strings "?DERIVE"
                          "?NONE")
-        (default-dynamic undefined)))
+        (default-dynamic "?DERIVE")))
 
 (defclass default-dynamic
   (is-a default-facet)
@@ -818,11 +885,10 @@
         (default ?NONE))
   (slot default-value
         (type SYMBOL INSTANCE)
-        (allowed-symbols undefined
-                         nil)
+        (allowed-symbols nil)
         (allowed-classes default
                          default-dynamic)
-        (default-dynamic undefined))
+        (default-dynamic nil))
   (multislot type
              (type LEXEME)
              (cardinality 1 
@@ -1002,6 +1068,26 @@
                                                    (facets ?rest))
 
                                     ?after)))
+
+(defrule translate-defclass:convert-multislot
+         (parse)
+         ?f <- (object (is-a defclass)
+                       (contents $?before ?curr $?after)
+                       (name ?parent))
+         ?q <- (object (is-a list)
+                       (name ?curr)
+                       (contents multislot ?name $?rest))
+         =>
+         (unmake-instance ?q)
+         (modify-instance ?f 
+                          (contents ?before 
+                                    (make-instance of defclass-multislot 
+                                                   (slot-name ?name)
+                                                   (parent ?parent)
+                                                   (facets ?rest))
+
+                                    ?after)))
+
 (defrule translate-slot:type
          (parse)
          ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
@@ -1207,22 +1293,59 @@
                           (allowed-values ?first 
                                           $?rest)))
 
-(defrule translate-defclass:convert-multislot
+(defrule translate-slot:default:expression
          (parse)
-         ?f <- (object (is-a defclass)
-                       (contents $?before ?curr $?after)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b)
                        (name ?parent))
-         ?q <- (object (is-a list)
-                       (name ?curr)
-                       (contents multislot ?name $?rest))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents default
+                                  $?expressions))
          =>
-         (unmake-instance ?q)
-         (modify-instance ?f 
-                          (contents ?before 
-                                    (make-instance of defclass-multislot 
-                                                   (slot-name ?name)
-                                                   (parent ?parent)
-                                                   (facets ?rest))
+         (unmake-instace ?f2)
+         (modify-instance ?f
+                          (default-value (make-instance of default
+                                                        (parent ?parent)
+                                                        (value nil)
+                                                        (expressions ?expressions)))
 
-                                    ?after)))
+(defrule translate-slot:default:none-derive
+         (declare (salience 1))
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b)
+                       (name ?parent))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents default
+                                  ?a&"?NONE"|"?DERIVE"))
+         =>
+         (unmake-instace ?f2)
+         (modify-instance ?f
+                          (default-value (make-instance of default
+                                                        (parent ?parent)
+                                                        (value ?a)))))
 
+
+(defrule translate-slot:default-dynamic:expression
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+                       (facets $?a
+                               ?curr
+                               $?b)
+                       (name ?parent))
+         ?f2 <- (object (is-a list)
+                        (name ?curr)
+                        (contents default-dynamic
+                                  $?expressions))
+         =>
+         (unmake-instace ?f2)
+         (modify-instance ?f
+                          (default-value (make-instance of default-dynamic
+                                                        (parent ?parent)
+                                                        (expressions ?expressions)))))
