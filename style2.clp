@@ -979,8 +979,7 @@
              (default-dynamic "?VARIABLE"
                               "?VARIABLE"))
 
-
-  )
+  (multislot facets))
 
 
 (defclass defclass-slot
@@ -1022,8 +1021,7 @@
   (slot override-message
         (type LEXEME)
         (allowed-strings "?DEFAULT")
-        (default-dynamic "?DEFAULT"))
-  (multislot facets))
+        (default-dynamic "?DEFAULT")))
 
 (defclass defclass-single-slot
   (is-a defclass-slot)
@@ -1053,11 +1051,15 @@
 (defrule translate-defclass:convert-slot
          (parse)
          ?f <- (object (is-a defclass)
-                       (contents $?before ?curr $?after)
+                       (contents $?before 
+                                 ?curr 
+                                 $?after)
                        (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
-                       (contents slot|single-slot ?name $?rest))
+                       (contents slot|single-slot 
+                                 ?name 
+                                 $?rest))
          =>
          (unmake-instance ?q)
          (modify-instance ?f 
@@ -1072,11 +1074,15 @@
 (defrule translate-defclass:convert-multislot
          (parse)
          ?f <- (object (is-a defclass)
-                       (contents $?before ?curr $?after)
+                       (contents $?before 
+                                 ?curr 
+                                 $?after)
                        (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
-                       (contents multislot ?name $?rest))
+                       (contents multislot 
+                                 ?name 
+                                 $?rest))
          =>
          (unmake-instance ?q)
          (modify-instance ?f 
@@ -1156,6 +1162,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
+                          (facets ?a ?b)
                           (allowed-symbols ?first 
                                            $?rest)))
 
@@ -1173,6 +1180,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
+                          (facets ?a ?b)
                           (allowed-strings ?first 
                                            $?rest)))
 
@@ -1190,6 +1198,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
+                          (facets ?a ?b)
                           (allowed-lexemes ?first 
                                            $?rest)))
 
@@ -1207,6 +1216,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
+                          (facets ?a ?b)
                           (allowed-integers ?first 
                                             $?rest)))
 
@@ -1224,6 +1234,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
+                          (facets ?a ?b)
                           (allowed-floats ?first 
                                           $?rest)))
 
@@ -1241,6 +1252,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
+                          (facets ?a ?b)
                           (allowed-numbers ?first 
                                            $?rest)))
 (defrule translate-slot:allowed-instance-names
@@ -1257,6 +1269,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
+                          (facets ?a ?b)
                           (allowed-instance-names ?first 
                                                   $?rest)))
 
@@ -1274,6 +1287,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
+                          (facets ?a ?b)
                           (allowed-classes ?first 
                                            $?rest)))
 (defrule translate-slot:allowed-values
@@ -1290,6 +1304,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
+                          (facets ?a ?b)
                           (allowed-values ?first 
                                           $?rest)))
 
@@ -1305,12 +1320,13 @@
                         (contents default
                                   $?expressions))
          =>
-         (unmake-instace ?f2)
+         (unmake-instance ?f2)
          (modify-instance ?f
+                          (facets ?a ?b)
                           (default-value (make-instance of default
                                                         (parent ?parent)
-                                                        (value nil)
-                                                        (expressions ?expressions)))
+                                                        (variable nil)
+                                                        (expressions ?expressions)))))
 
 (defrule translate-slot:default:none-derive
          (declare (salience 1))
@@ -1323,13 +1339,14 @@
          ?f2 <- (object (is-a list)
                         (name ?curr)
                         (contents default
-                                  ?a&"?NONE"|"?DERIVE"))
+                                  ?c&"?NONE"|"?DERIVE"))
          =>
-         (unmake-instace ?f2)
+         (unmake-instance ?f2)
          (modify-instance ?f
+                          (facets ?a ?b)
                           (default-value (make-instance of default
                                                         (parent ?parent)
-                                                        (value ?a)))))
+                                                        (variable ?c)))))
 
 
 (defrule translate-slot:default-dynamic:expression
@@ -1344,8 +1361,206 @@
                         (contents default-dynamic
                                   $?expressions))
          =>
-         (unmake-instace ?f2)
+         (unmake-instance ?f2)
          (modify-instance ?f
                           (default-value (make-instance of default-dynamic
                                                         (parent ?parent)
                                                         (expressions ?expressions)))))
+
+(defrule translate-slot:defclass-slot:storage
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+                       (facets $?a
+                               ?b
+                               $?c))
+         ?f2 <- (object (is-a list)
+                        (name ?b)
+                        (contents storage 
+                                  ?storage))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (facets ?a ?b)
+                          (storage ?storage)))
+
+(defrule translate-slot:defclass-slot:access
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+                       (facets $?a
+                               ?b
+                               $?c))
+         ?f2 <- (object (is-a list)
+                        (name ?b)
+                        (contents access 
+                                  ?access))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (facets ?a ?b)
+                          (access ?access)))
+
+(defrule translate-slot:defclass-slot:propagation
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+                       (facets $?a
+                               ?b
+                               $?c))
+         ?f2 <- (object (is-a list)
+                        (name ?b)
+                        (contents propagation 
+                                  ?propagation))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (facets ?a ?b)
+                          (propagation ?propagation)))
+
+(defrule translate-slot:defclass-slot:source
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+                       (facets $?a
+                               ?b
+                               $?c))
+         ?f2 <- (object (is-a list)
+                        (name ?b)
+                        (contents source 
+                                  ?source))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (facets ?a ?b)
+                          (source ?source)))
+
+(defrule translate-slot:defclass-slot:pattern-match
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+                       (facets $?a
+                               ?b
+                               $?c))
+         ?f2 <- (object (is-a list)
+                        (name ?b)
+                        (contents pattern-match 
+                                  ?pattern-match))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (facets ?a ?b)
+                          (pattern-match ?pattern-match)))
+(defrule translate-slot:defclass-slot:visibility
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+                       (facets $?a
+                               ?b
+                               $?c))
+         ?f2 <- (object (is-a list)
+                        (name ?b)
+                        (contents visibility 
+                                  ?visibility))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (facets ?a ?b)
+                          (visibility ?visibility)))
+
+(defrule translate-slot:defclass-slot:create-accessor
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+                       (facets $?a
+                               ?b
+                               $?c))
+         ?f2 <- (object (is-a list)
+                        (name ?b)
+                        (contents create-accessor 
+                                  ?create-accessor))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (facets ?a ?b)
+                          (create-accessor ?create-accessor)))
+(defrule translate-slot:defclass-slot:override-message
+         (parse)
+         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+                       (facets $?a
+                               ?b
+                               $?c))
+         ?f2 <- (object (is-a list)
+                        (name ?b)
+                        (contents override-message 
+                                  ?override-message))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (facets ?a ?b)
+                          (override-message ?override-message)))
+
+(defrule translate-deftemplate:comment
+         (parse)
+         ?f <- (object (is-a list)
+                       (contents deftemplate
+                                 ?name 
+                                 ?comment&:(stringp ?comment)
+                                 $?slots)
+                       (parent ?parent))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?name of deftemplate
+                        (comment ?comment)
+                        (parent ?parent)
+                        (slots $?slots)))
+
+(defrule translate-deftemplate:no-comment
+         (parse)
+         ?f <- (object (is-a list)
+                       (contents deftemplate
+                                 ?name 
+                                 $?slots&:(no-strings-in-list ?slots))
+                       (parent ?parent))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?name of deftemplate
+                        (parent ?parent)
+                        (slots $?slots)))
+
+(defrule translate-deftemplate:slot
+         (parse)
+         ?f <- (object (is-a deftemplate)
+                       (slots $?a 
+                              ?slot
+                              $?b)
+                       (name ?parent))
+         ?f2 <- (object (is-a list)
+                        (name ?slot)
+                        (contents slot 
+                                  ?name
+                                  $?facets))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (slots ?a 
+                                 (make-instance of deftemplate-single-slot
+                                                (parent ?parent)
+                                                (slot-name ?name)
+                                                (facets ?facets))
+                                 ?b)))
+
+(defrule translate-deftemplate:multislot
+         (parse)
+         ?f <- (object (is-a deftemplate)
+                       (slots $?a 
+                              ?slot
+                              $?b)
+                       (name ?parent))
+         ?f2 <- (object (is-a list)
+                        (name ?slot)
+                        (contents multislot 
+                                  ?name
+                                  $?facets))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f 
+                          (slots ?a 
+                                 (make-instance of deftemplate-multislot
+                                                (parent ?parent)
+                                                (slot-name ?name)
+                                                (facets ?facets))
+                                 ?b)))
