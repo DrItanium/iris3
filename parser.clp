@@ -23,6 +23,9 @@
 						"Converts a hexidecimal number to its decimal representation")
 (defgeneric hexchar-to-number
 						"Converts a hexidecimal character to its decimal representation")
+(defgeneric exists$
+						"Checks to see if a given predicate function returns true for at least one element in a list")
+
 (defmethod apply$
 	((?fn SYMBOL)
 	 (?list MULTIFIELD))
@@ -79,19 +82,32 @@
 													 (length$ ?a)
 													 ?a))
 	(bind ?len (length$ ?strip))
+	; Now go through and build up the number by extracting the current char
+	; converting it and then shifting left by the position of the digit in the
+	; original "number"
 	(loop-for-count (?ind 1 ?len) do
 									(bind ?result (+ ?result 
 																	 (left-shift (hexchar-to-number (sub-string ?ind ?ind ?strip))
 																							 (* (- ?len ?ind) 4)))))
 	(return ?result))
 
+(defmethod exists$
+	((?fn SYMBOL)
+	 (?list MULTIFIELD))
+	(progn$ (?e ?list)
+					(if (funcall ?fn ?e) then
+						(return TRUE)))
+	(return FALSE))
+(defmethod exists$
+	((?fn SYMBOL)
+	 $?list)
+	(exists$ ?fn
+					 ?list))
+
 (deffunction no-strings-in-list
 						 (?list)
-						 (switch (length$ ?list)
-										 (case 0 then TRUE)
-										 (case 1 then (not (stringp (expand$ (first$ ?list)))))
-										 (default (not (or (expand$ (apply$ stringp 
-																												?list)))))))
+						 (not (exists$ stringp
+													 ?list)))
 (deftemplate lexer
 						 (slot file
 									 (type LEXEME)
