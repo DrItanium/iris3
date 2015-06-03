@@ -224,7 +224,7 @@
 	(type SYMBOL)
 	(allowed-symbols concrete 
 			 abstract))
-  (slot pattern-match-role
+  (slot pattern-match
 	(type SYMBOL)
 	(allowed-symbols reactive 
 			 non-reactive))
