@@ -15,6 +15,32 @@
 ; 2. Altered source versions must be plainly marked as such, and must not be
 ;    misrepresented as being the original software.
 ; 3. This notice may not be removed or altered from any source distribution.
+(defglobal MAIN 
+	   ?*priority:two* = 2
+	   ?*priority:one* = 1
+	   ?*priority:last* = -9999
+	   ?*priority:dead-last* = -10000)
+(deftemplate stage
+	     (slot current
+		   (type SYMBOL)
+		   (default ?NONE))
+	     (multislot rest
+			(type SYMBOL)))
+(defrule next-stage
+	 (declare (salience ?*priority:last*))
+	 ?f <- (stage (rest ?next $?rest))
+	 =>
+	 (modify ?f (current ?next)
+		 (rest ?rest)))
+(defrule done-with-stages
+	 (declare (salience ?*priority:dead-last*))
+	 ?f <- (stage (rest))
+	 =>
+	 (retract ?f))
+(deffacts stages
+	  (stage (current load)
+		 (rest lex
+		       parse)))
 (defgeneric apply$
 	    "Apply a function to each member of a list and return the result")
 (defgeneric filter$
@@ -25,7 +51,6 @@
 	    "Converts a hexidecimal character to its decimal representation")
 (defgeneric exists$
 	    "Checks to see if a given predicate function returns true for at least one element in a list")
-
 (defmethod apply$
   ((?fn SYMBOL)
    (?list MULTIFIELD))
@@ -103,11 +128,16 @@
    $?list)
   (exists$ ?fn
 	   ?list))
+(defgeneric no-strings-in-list
+	    "checks to see if the given list is free of strings")
+(defmethod no-strings-in-list
+  ((?list MULTIFIELD))
+  (not (exists$ stringp
+		?list)))
+(defmethod no-strings-in-list
+  ($?list)
+  (no-strings-in-list ?list))
 
-(deffunction no-strings-in-list
-	     (?list)
-	     (not (exists$ stringp
-			   ?list)))
 (deftemplate lexer
 	     (slot file
 		   (type LEXEME)
@@ -230,20 +260,6 @@
 			 non-reactive))
   (multislot contents))
 
-(defrule open-file
-	 ?f <- (open ?path)
-	 =>
-	 (retract ?f)
-	 (bind ?name (gensym*))
-	 (if (open ?path 
-		   ?name 
-		   "r") then
-	   (assert (lexer (file ?path)
-			  (router ?name)
-			  (elements (read ?name))))
-	   else
-	   (printout werror 
-		     "couldn't open " ?path crlf)))
 (defgeneric split
 	    "splits a lexeme given a delimiter")
 (defgeneric extract-quoted-parens
@@ -287,9 +303,9 @@
    (?parent SYMBOL))
   (bind ?e (create$))
   (bind ?q (split ?line
-		       ?*quoted-open-paren*))
+		  ?*quoted-open-paren*))
   (progn$ (?op (split ?line
-		     ?*quoted-open-paren*))
+		      ?*quoted-open-paren*))
 	  (if (eq ?op
 		  ?*quoted-open-paren*) then
 	    (bind ?e (create$ ?e 
@@ -315,7 +331,23 @@
   (instance-name (make-instance of lexeme
 				(parent ?parent)
 				(value ?value))))
+(defrule open-file
+	 (stage (current load))
+	 ?f <- (open ?path)
+	 =>
+	 (retract ?f)
+	 (bind ?name (gensym*))
+	 (if (open ?path 
+		   ?name 
+		   "r") then
+	   (assert (lexer (file ?path)
+			  (router ?name)
+			  (elements (read ?name))))
+	   else
+	   (printout werror 
+		     "couldn't open " ?path crlf)))
 (defrule read-element
+	 (stage (current lex))
 	 ?f <- (lexer (file ?path)
 		      (router ?name)
 		      (elements $?elements)
@@ -325,14 +357,15 @@
 	 (bind ?next (readline ?name))
 	 (if (neq ?next 
 		  EOF) then
-	  (bind ?result (extract-quoted-parens ?next
-					       ?name))
+	   (bind ?result (extract-quoted-parens ?next
+						?name))
 	   (modify ?f (elements ?elements ?result))
 	   else
 	   (modify ?f (fully-loaded TRUE))))
 
 (defrule mark-sub-list
 	 (declare (salience 1))
+	 (stage (current lex))
 	 ?f <- (lexer (elements $?before 
 				"(" $?inner&:(and (not (member$ ")" 
 								?inner))
@@ -349,17 +382,17 @@
 			      ?after)))
 
 (defrule finished-completely
+	 (stage (current lex))
 	 ?f <- (lexer (file ?path)
 		      (router ?name)
 		      (elements $?elements)
 		      (fully-loaded TRUE))
 	 =>
 	 (close ?name)
-	 (retract ?f)
-	 (assert (parse)))
+	 (retract ?f))
 (defrule translate-defrule:comment:no-decl
 	 (declare (salience 1))
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defrule 
@@ -378,7 +411,7 @@
 
 (defrule translate-defrule:no-comment:no-decl
 	 (declare (salience 1))
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defrule
@@ -395,7 +428,7 @@
 
 (defrule translate-defrule:comment:decl:salience-only
 	 (declare (salience 1))
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defrule 
@@ -424,7 +457,7 @@
 
 (defrule translate-defrule:no-comment:decl:salience-only
 	 (declare (salience 1))
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defrule
@@ -451,7 +484,7 @@
 
 (defrule translate-defrule:comment:decl:auto-focus-only
 	 (declare (salience 1))
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defrule 
@@ -480,7 +513,7 @@
 
 (defrule translate-defrule:no-comment:decl:auto-focus-only
 	 (declare (salience 1))
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defrule
@@ -507,7 +540,7 @@
 
 (defrule translate-defrule:comment:decl:both-salience-first
 	 (declare (salience 1))
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defrule 
@@ -542,7 +575,7 @@
 
 (defrule translate-defrule:comment:decl:both-salience-second
 	 (declare (salience 1))
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defrule 
@@ -577,7 +610,7 @@
 
 (defrule translate-defrule:no-comment:decl:both-salience-first
 	 (declare (salience 1))
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defrule
@@ -609,7 +642,7 @@
 			(body ?body)))
 (defrule translate-defrule:no-comment:decl:both-salience-second
 	 (declare (salience 1))
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defrule
@@ -641,7 +674,7 @@
 			(body ?body)))
 
 (defrule translate-match:no-binding
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defrule)
 		       (name ?parent)
 		       (matches $?before ?list $?after))
@@ -656,22 +689,33 @@
 								 (parent ?parent)
 								 (contents ?contents))) 
 				   $?after)))
-
+;TODO: handle multiline strings
 (defrule translate-match:binding
-	 (parse)
-	 ?f <- (object (is-a defrule)
-		       (matches $?before ?var <- ?list $?after))
-	 ?q <- (object (is-a match)
-		       (name ?list))
+	 "Before we construct defrule's we have to capture bound matches to prevent a matching ambiguity in a defrule between a comment and a bound match (both of them will show up as strings)"
+	 (declare (salience ?*priority:two*))
+	 (stage (current parse))
+	 ?f <- (object (is-a list)
+		       (contents $?before 
+				 ?var <- ?list 
+				 $?after)
+		       (name ?parent))
+	 ?f2 <- (object (is-a list)
+			(name ?list)
+			(contents $?contents))
 	 =>
-	 (modify-instance ?q 
-			  (binding ?var))
+	 (unmake-instance ?f2)
+	 (bind ?z (instance-name (make-instance ?list of match
+				  (parent ?parent)
+				  (binding ?var)
+				  (contents ?contents))))
 	 (modify-instance ?f
-			  (matches ?before ?list ?after)))
+			  (contents $?before
+				    ?list
+				    $?after)))
 
 
 (defrule translate-deffunction:comment
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (name ?parent)
 		       (contents deffunction 
@@ -690,7 +734,7 @@
 			(arguments ?a)
 			(body ?body)))
 (defrule translate-deffunction:no-comment
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents deffunction 
@@ -708,7 +752,7 @@
 			(body ?body)))
 
 (defrule translate-defgeneric:no-comment
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defgeneric
@@ -718,7 +762,7 @@
 	 (make-instance ?name of defgeneric 
 			(parent ?parent)))
 (defrule translate-defgeneric:comment
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defgeneric
@@ -730,7 +774,7 @@
 			(comment ?comment)
 			(parent ?parent)))
 (defrule translate-defclass:comment
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defclass 
@@ -751,7 +795,7 @@
 
 
 (defrule translate-defclass:no-comment
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defclass 
@@ -771,7 +815,7 @@
 
 
 (defrule translate-defclass:populate-role
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass)
 		       (contents ?first
 				 $?rest))
@@ -784,7 +828,7 @@
 			  (role ?role)
 			  (contents ?rest)))
 (defrule translate-defclass:populate-pattern-match
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass)
 		       (contents ?first 
 				 $?rest))
@@ -798,7 +842,7 @@
 			  (contents ?rest)))
 
 (defrule translate-defclass:convert-message-handler-documentation:no-type
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass)
 		       (contents $?before ?curr $?after)
 		       (name ?parent))
@@ -812,7 +856,7 @@
 							      (handler-name ?name)) 
 				       ?after)))
 (defrule translate-defclass:convert-message-handler-documentation:type
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass)
 		       (contents $?before ?curr $?after)
 		       (name ?parent))
@@ -832,7 +876,7 @@
 
 
 (defrule translate-defglobal:module
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (contents defglobal 
 				 ?module&:(symbolp ?module)
@@ -846,7 +890,7 @@
 			(assignments ?rest)))
 
 (defrule translate-defglobal:no-module
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (contents defglobal 
 				 $?rest)
@@ -858,7 +902,7 @@
 			(assignments ?rest)))
 
 (defrule build-defglobal-assignment
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defglobal)
 		       (assignments $?before 
 				    ?var =(string-to-field "=") ?value 
@@ -878,7 +922,7 @@
 	has-comment)
   (multislot specifications))
 (defrule build-defmodule:comment
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (parent ?parent)
 		       (contents defmodules
@@ -915,7 +959,7 @@
   (pattern-match reactive))
 
 (defrule build-export-specification
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defmodule)
 		       (name ?parent)
 		       (specifications $?a 
@@ -934,14 +978,14 @@
 									(items $?rest)))
 					  $?b))) 
 (defrule expand-export-specification:all-or-none
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a export-specification)
 		       (construct undefined)
 		       (qualifiers "?ALL"|"?NONE"))
 	 =>
 	 (modify-instance ?f (construct nil)))
 (defrule expand-export-specification:specific-construct-all-or-none
-	 (parse)
+	 (stage (current parse))
 	 ?f  <- (object (is-a export-specification)
 			(construct undefined)
 			(qualifiers ?construct&deftemplate|defclass|defglobal|deffunction|defgeneric
@@ -952,7 +996,7 @@
 			  (qualifiers ?qualifier)))
 
 (defrule expand-export-specification:specific-construct-and-qualifiers
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a export-specification)
 		       (construct undefined)
 		       (qualifiers ?construct&deftemplate|defclass|defglobal|deffunction|defgeneric
@@ -973,7 +1017,7 @@
 	(default ?NONE)))
 
 (defrule build-import-specification
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defmodule)
 		       (name ?parent)
 		       (specifications $?a 
@@ -993,7 +1037,7 @@
 					  $?b))) 
 
 (defrule expand-import-specification:all-or-none
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a import-specification)
 		       (construct undefined)
 		       (qualifiers ?module-name&:(symbolp ?module-name)
@@ -1004,7 +1048,7 @@
 			  (construct nil)
 			  (qualifiers ?qualifier)))
 (defrule expand-import-specification:specific-construct-all-or-none
-	 (parse)
+	 (stage (current parse))
 	 ?f  <- (object (is-a import-specification)
 			(construct undefined)
 			(qualifiers ?module-name&:(symbolp ?module-name)
@@ -1017,7 +1061,7 @@
 			  (qualifiers ?qualifier)))
 
 (defrule expand-import-specification:specific-construct-and-qualifiers
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a import-specification)
 		       (construct undefined)
 		       (qualifiers ?module-name&:(symbolp ?module-name)
@@ -1225,7 +1269,7 @@
   (pattern-match reactive))
 
 (defrule translate-defclass:convert-slot
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass)
 		       (contents $?before 
 				 ?curr 
@@ -1248,7 +1292,7 @@
 				    ?after)))
 
 (defrule translate-defclass:convert-multislot
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass)
 		       (contents $?before 
 				 ?curr 
@@ -1271,7 +1315,7 @@
 				    ?after)))
 
 (defrule translate-slot:type
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1289,7 +1333,7 @@
 				$?types)))
 
 (defrule translate-slot:range
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1307,7 +1351,7 @@
 				 ?to)))
 
 (defrule translate-slot:cardinality
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1325,7 +1369,7 @@
 				       ?to)))
 
 (defrule translate-slot:allowed-symbols
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1343,7 +1387,7 @@
 					   $?rest)))
 
 (defrule translate-slot:allowed-strings
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1361,7 +1405,7 @@
 					   $?rest)))
 
 (defrule translate-slot:allowed-lexemes
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1379,7 +1423,7 @@
 					   $?rest)))
 
 (defrule translate-slot:allowed-integers
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1397,7 +1441,7 @@
 					    $?rest)))
 
 (defrule translate-slot:allowed-floats
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1415,7 +1459,7 @@
 					  $?rest)))
 
 (defrule translate-slot:allowed-numbers
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1432,7 +1476,7 @@
 			  (allowed-numbers ?first 
 					   $?rest)))
 (defrule translate-slot:allowed-instance-names
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1450,7 +1494,7 @@
 						  $?rest)))
 
 (defrule translate-slot:allowed-classes
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1467,7 +1511,7 @@
 			  (allowed-classes ?first 
 					   $?rest)))
 (defrule translate-slot:allowed-values
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1485,7 +1529,7 @@
 					  $?rest)))
 
 (defrule translate-slot:default:expression
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1506,7 +1550,7 @@
 
 (defrule translate-slot:default:none-derive
 	 (declare (salience 1))
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1526,7 +1570,7 @@
 
 
 (defrule translate-slot:default-dynamic:expression
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
 		       (facets $?a
 			       ?curr
@@ -1544,7 +1588,7 @@
 							(expressions ?expressions)))))
 
 (defrule translate-slot:defclass-slot:storage
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|defclass-multislot)
 		       (facets $?a
 			       ?b
@@ -1560,7 +1604,7 @@
 			  (storage ?storage)))
 
 (defrule translate-slot:defclass-slot:access
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|defclass-multislot)
 		       (facets $?a
 			       ?b
@@ -1576,7 +1620,7 @@
 			  (access ?access)))
 
 (defrule translate-slot:defclass-slot:propagation
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|defclass-multislot)
 		       (facets $?a
 			       ?b
@@ -1592,7 +1636,7 @@
 			  (propagation ?propagation)))
 
 (defrule translate-slot:defclass-slot:source
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|defclass-multislot)
 		       (facets $?a
 			       ?b
@@ -1608,7 +1652,7 @@
 			  (source ?source)))
 
 (defrule translate-slot:defclass-slot:pattern-match
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|defclass-multislot)
 		       (facets $?a
 			       ?b
@@ -1623,7 +1667,7 @@
 			  (facets ?a ?b)
 			  (pattern-match ?pattern-match)))
 (defrule translate-slot:defclass-slot:visibility
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|defclass-multislot)
 		       (facets $?a
 			       ?b
@@ -1639,7 +1683,7 @@
 			  (visibility ?visibility)))
 
 (defrule translate-slot:defclass-slot:create-accessor
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|defclass-multislot)
 		       (facets $?a
 			       ?b
@@ -1654,7 +1698,7 @@
 			  (facets ?a ?b)
 			  (create-accessor ?create-accessor)))
 (defrule translate-slot:defclass-slot:override-message
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a defclass-single-slot|defclass-multislot)
 		       (facets $?a
 			       ?b
@@ -1670,7 +1714,7 @@
 			  (override-message ?override-message)))
 
 (defrule translate-deftemplate:comment
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (contents deftemplate
 				 ?name 
@@ -1685,7 +1729,7 @@
 			(slots $?slots)))
 
 (defrule translate-deftemplate:no-comment
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a list)
 		       (contents deftemplate
 				 ?name 
@@ -1698,7 +1742,7 @@
 			(slots $?slots)))
 
 (defrule translate-deftemplate:slot
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a deftemplate)
 		       (slots $?a 
 			      ?slot
@@ -1720,7 +1764,7 @@
 				 ?b)))
 
 (defrule translate-deftemplate:multislot
-	 (parse)
+	 (stage (current parse))
 	 ?f <- (object (is-a deftemplate)
 		       (slots $?a 
 			      ?slot
