@@ -698,19 +698,16 @@
 (defrule translate-match:no-binding
          (parse)
          ?f <- (object (is-a defrule)
-                       (name ?parent)
-                       (matches $?before ?list $?after))
+                       (matches $? ?list $?)
+                       (name ?parent))
          ?q <- (object (is-a list)
                        (name ?list)
                        (contents $?contents))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f 
-                          (matches $?before 
-                                   (instance-name (make-instance of match
-                                                                 (parent ?parent)
-                                                                 (contents ?contents))) 
-                                   $?after)))
+         (make-instance ?list of match
+                        (parent ?parent)
+                        (contents ?contents)))
 (defrule capture-binding-match
          "capture binding matches ahead of time to prevent issues"
          (declare (salience 10))
@@ -896,21 +893,20 @@
 (defrule translate-defclass:convert-message-handler-documentation:no-type
          (parse)
          ?f <- (object (is-a defclass)
-                       (contents $?before ?curr $?after)
+                       (contents $? ?curr $?)
                        (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
                        (contents message-handler ?name))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f (contents ?before (make-instance of message-handler-documentation
-                                                              (parent ?parent)
-                                                              (handler-name ?name)) 
-                                       ?after)))
+         (make-instance ?curr of message-handler-documentation
+                        (parent ?parent)
+                        (handler-name ?name)))
 (defrule translate-defclass:convert-message-handler-documentation:type
          (parse)
          ?f <- (object (is-a defclass)
-                       (contents $?before ?curr $?after)
+                       (contents $? ?curr $?)
                        (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
@@ -960,10 +956,10 @@
          =>
          (modify-instance ?f 
                           (assignments ?before
-                                       (make-instance of defglobal-assignment
-                                                      (parent ?parent)
-                                                      (variable ?var)
-                                                      (value ?value))
+                                       (instance-name (make-instance of defglobal-assignment
+                                                                     (parent ?parent)
+                                                                     (variable ?var)
+                                                                     (value ?value)))
                                        ?rest)))
 
 (defclass defmodule
@@ -1014,21 +1010,16 @@
          (parse)
          ?f <- (object (is-a defmodule)
                        (name ?parent)
-                       (specifications $?a 
-                                       ?b 
-                                       $?c))
+                       (specifications $? ?b $?))
          ?f2 <- (object (is-a list)
                         (name ?b)
                         (contents export 
                                   $?rest))
          =>
          (unmake-instance ?f2)
-         (modify-instance ?a
-                          (specifications $?a
-                                          (instance-name (make-instance of export-specification
-                                                                        (parent ?parent)
-                                                                        (items $?rest)))
-                                          $?b))) 
+         (make-instance ?b of export-specification
+                        (parent ?parent)
+                        (items ?rest)))
 (defrule expand-export-specification:all-or-none
          (parse)
          ?f <- (object (is-a export-specification)
@@ -1072,21 +1063,16 @@
          (parse)
          ?f <- (object (is-a defmodule)
                        (name ?parent)
-                       (specifications $?a 
-                                       ?b 
-                                       $?c))
+                       (specifications $? ?b $?))
          ?f2 <- (object (is-a list)
                         (name ?b)
                         (contents import 
                                   $?rest))
          =>
          (unmake-instance ?f2)
-         (modify-instance ?a
-                          (specifications $?a
-                                          (instance-name (make-instance of import-specification
-                                                                        (parent ?parent)
-                                                                        (qualifiers $?rest)))
-                                          $?b))) 
+         (make-instance ?b of import-specification
+                        (parent ?parent)
+                        (qualifiers ?rest)))
 
 (defrule expand-import-specification:all-or-none
          (parse)
@@ -1322,11 +1308,9 @@
 
 (defrule translate-defclass:convert-slot
          (parse)
-         ?f <- (object (is-a defclass)
-                       (contents $?before 
-                                 ?curr 
-                                 $?after)
-                       (name ?parent))
+         (object (is-a defclass)
+                 (contents $? ?curr $?)
+                 (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
                        (contents slot|single-slot 
@@ -1334,22 +1318,16 @@
                                  $?rest))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f 
-                          (contents ?before 
-                                    (make-instance of defclass-single-slot
-                                                   (slot-name ?name)
-                                                   (parent ?parent)
-                                                   (facets ?rest))
-
-                                    ?after)))
+         (make-instance ?curr of defclass-single-slot
+                        (slot-name ?name)
+                        (parent ?parent)
+                        (facets ?rest)))
 
 (defrule translate-defclass:convert-multislot
          (parse)
-         ?f <- (object (is-a defclass)
-                       (contents $?before 
-                                 ?curr 
-                                 $?after)
-                       (name ?parent))
+         (object (is-a defclass)
+                 (contents $?  ?curr $?)
+                 (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
                        (contents multislot 
@@ -1357,14 +1335,10 @@
                                  $?rest))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f 
-                          (contents ?before 
-                                    (make-instance of defclass-multislot 
-                                                   (slot-name ?name)
-                                                   (parent ?parent)
-                                                   (facets ?rest))
-
-                                    ?after)))
+         (make-instance ?curr of defclass-multislot 
+                        (slot-name ?name)
+                        (parent ?parent)
+                        (facets ?rest)))
 
 (defrule translate-slot:type
          (parse)
@@ -1593,12 +1567,13 @@
                                   $?expressions))
          =>
          (unmake-instance ?f2)
+         (make-instance ?curr of default
+                        (parent ?parent)
+                        (variable nil)
+                        (expressions ?expressions))
          (modify-instance ?f
                           (facets ?a ?b)
-                          (default-value (make-instance of default
-                                                        (parent ?parent)
-                                                        (variable nil)
-                                                        (expressions ?expressions)))))
+                          (default-value ?curr))
 
 (defrule translate-slot:default:none-derive
          (declare (salience 1))
@@ -1614,11 +1589,12 @@
                                   ?c&"?NONE"|"?DERIVE"))
          =>
          (unmake-instance ?f2)
+         (make-instance ?curr of default
+                        (parent ?parent)
+                        (variable ?c))
          (modify-instance ?f
                           (facets ?a ?b)
-                          (default-value (make-instance of default
-                                                        (parent ?parent)
-                                                        (variable ?c)))))
+                          (default-value ?curr)))
 
 
 (defrule translate-slot:default-dynamic:expression
@@ -1634,10 +1610,12 @@
                                   $?expressions))
          =>
          (unmake-instance ?f2)
+         (make-instance ?curr of default-dynamic
+                        (parent ?parent)
+                        (expressions ?expressions))
          (modify-instance ?f
-                          (default-value (make-instance of default-dynamic
-                                                        (parent ?parent)
-                                                        (expressions ?expressions)))))
+                          (facets ?a ?b)
+                          (default-value ?curr)))
 
 (defrule translate-slot:defclass-slot:storage
          (parse)
@@ -1652,7 +1630,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (storage ?storage)))
 
 (defrule translate-slot:defclass-slot:access
@@ -1668,7 +1646,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (access ?access)))
 
 (defrule translate-slot:defclass-slot:propagation
@@ -1684,7 +1662,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (propagation ?propagation)))
 
 (defrule translate-slot:defclass-slot:source
@@ -1700,7 +1678,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (source ?source)))
 
 (defrule translate-slot:defclass-slot:pattern-match
@@ -1716,7 +1694,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (pattern-match ?pattern-match)))
 (defrule translate-slot:defclass-slot:visibility
          (parse)
@@ -1731,7 +1709,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (visibility ?visibility)))
 
 (defrule translate-slot:defclass-slot:create-accessor
@@ -1798,11 +1776,11 @@
 
 (defrule translate-deftemplate:slot
          (parse)
-         ?f <- (object (is-a deftemplate)
-                       (slots $?a 
-                              ?slot
-                              $?b)
-                       (name ?parent))
+         (object (is-a deftemplate)
+                 (slots $?a 
+                        ?slot
+                        $?b)
+                 (name ?parent))
          ?f2 <- (object (is-a list)
                         (name ?slot)
                         (contents slot 
@@ -1810,21 +1788,18 @@
                                   $?facets))
          =>
          (unmake-instance ?f2)
-         (modify-instance ?f 
-                          (slots ?a 
-                                 (make-instance of deftemplate-single-slot
-                                                (parent ?parent)
-                                                (slot-name ?name)
-                                                (facets ?facets))
-                                 ?b)))
+         (make-instance ?slot of deftemplate-single-slot
+                        (parent ?parent)
+                        (slot-name ?name)
+                        (facets ?facets)))
 
 (defrule translate-deftemplate:multislot
          (parse)
-         ?f <- (object (is-a deftemplate)
-                       (slots $?a 
-                              ?slot
-                              $?b)
-                       (name ?parent))
+         (object (is-a deftemplate)
+                 (slots $?a 
+                        ?slot
+                        $?b)
+                 (name ?parent))
          ?f2 <- (object (is-a list)
                         (name ?slot)
                         (contents multislot 
@@ -1832,13 +1807,10 @@
                                   $?facets))
          =>
          (unmake-instance ?f2)
-         (modify-instance ?f 
-                          (slots ?a 
-                                 (make-instance of deftemplate-multislot
-                                                (parent ?parent)
-                                                (slot-name ?name)
-                                                (facets ?facets))
-                                 ?b)))
+         (make-instance ?slot of deftemplate-multislot
+                        (parent ?parent)
+                        (slot-name ?name)
+                        (facets ?facets)))
 
 (defclass bind
   "a bind function call"
