@@ -1573,7 +1573,7 @@
                         (expressions ?expressions))
          (modify-instance ?f
                           (facets ?a ?b)
-                          (default-value ?curr))
+                          (default-value ?curr)))
 
 (defrule translate-slot:default:none-derive
          (declare (salience 1))
@@ -1936,6 +1936,31 @@
                         (parent ?parent)
                         (method-name ?name)
                         (index -1)
+                        (args ?contents)
+                        (contents ?body)))
+(defrule parse-defmethod:comment
+         (parse)
+         ?f <- (object (is-a list)
+                       (contents defmethod
+                                 ?name
+                                 ?comment
+                                 ?args
+                                 $?body)
+                       (name ?lname)
+                       (parent ?parent))
+         ?f2 <- (object (is-a string)
+                        (name ?comment)
+                        (value ?cvalue))
+         ?f3 <- (object (is-a list)
+                        (name ?args)
+                        (contents $?contents))
+         =>
+         (unmake-instance ?f ?f2 ?f3)
+         (make-instance ?lname of defmethod
+                        (parent ?parent)
+                        (method-name ?name)
+                        (index -1)
+                        (comment ?cvalue)
                         (args ?contents)
                         (contents ?body)))
 (defrule parse-method-argument
