@@ -16,6 +16,7 @@
 ;    misrepresented as being the original software.
 ; 3. This notice may not be removed or altered from any source distribution.
 (defglobal MAIN 
+           ?*priority:first* = 10000
            ?*priority:two* = 2
            ?*priority:one* = 1
            ?*priority:last* = -9999
@@ -37,7 +38,7 @@
          ?f <- (stage (rest))
          =>
          (retract ?f))
-(deffacts stages
+(deffacts init-stages
           (stage (current load)
                  (rest lex
                        parse)))
@@ -186,20 +187,93 @@
         (type LEXEME)
         (source composite)
         (storage local)))
-(defclass global-variable
-  (is-a scalar-thing))
-(defclass multifield-variable
-  (is-a scalar-thing))
-(defclass singlefield-variable
-  (is-a scalar-thing))
-(defclass multifield-global-variable
-  (is-a scalar-thing))
-(defclass not-constraint
-  (is-a scalar-thing))
-(defclass and-constraint
-  (is-a scalar-thing))
-(defclass or-constraint
-  (is-a scalar-thing))
+
+(defclass global-variable (is-a scalar-thing))
+(defclass multifield-global-variable (is-a scalar-thing))
+(defclass multifield-variable (is-a scalar-thing))
+(defclass singlefield-variable (is-a scalar-thing))
+(defclass not-constraint (is-a scalar-thing))
+(defclass and-constraint (is-a scalar-thing))
+(defclass or-constraint (is-a scalar-thing))
+(defclass multifield-wildcard (is-a scalar-thing))
+(defclass singlefield-wildcard (is-a scalar-thing))
+(defgeneric construct-instance
+            "constructs an instance of soemthing given a series of variables. Returns the instance name of the thing")
+(defmethod construct-instance
+  ((?name SYMBOL)
+   (?class SYMBOL)
+   (?parent SYMBOL
+            INSTANCE-NAME)
+   (?value LEXEME))
+  (instance-name (make-instance ?name of ?class 
+                                (parent ?parent)
+                                (value ?value))))
+
+(defmethod construct-instance
+  ((?name SYMBOL)
+   (?class SYMBOL (eq ?class OR_CONSTRAINT))
+   (?parent SYMBOL
+            INSTANCE-NAME)
+   (?value LEXEME))
+  (construct-instance ?name or-constraint ?parent ?value))
+(defmethod construct-instance
+  ((?name SYMBOL)
+   (?class SYMBOL (eq ?class AND_CONSTRAINT))
+   (?parent SYMBOL
+            INSTANCE-NAME)
+   (?value LEXEME))
+  (construct-instance ?name and-constraint ?parent ?value))
+(defmethod construct-instance
+  ((?name SYMBOL)
+   (?class SYMBOL (eq ?class NOT_CONSTRAINT))
+   (?parent SYMBOL
+            INSTANCE-NAME)
+   (?value LEXEME))
+  (construct-instance ?name not-constraint ?parent ?value))
+(defmethod construct-instance
+  ((?name SYMBOL)
+   (?class SYMBOL (eq ?class MF_WILDCARD))
+   (?parent SYMBOL
+            INSTANCE-NAME)
+   (?value LEXEME))
+  (construct-instance ?name multifield-wildcard ?parent ?value))
+(defmethod construct-instance
+  ((?name SYMBOL)
+   (?class SYMBOL (eq ?class SF_WILDCARD))
+   (?parent SYMBOL
+            INSTANCE-NAME)
+   (?value LEXEME))
+  (construct-instance ?name singlefield-wildcard ?parent ?value))
+(defmethod construct-instance
+  ((?name SYMBOL)
+   (?class SYMBOL (eq ?class MF_VARIABLE))
+   (?parent SYMBOL
+            INSTANCE-NAME)
+   (?value LEXEME))
+  (construct-instance ?name multifield-variable ?parent ?value))
+(defmethod construct-instance
+  ((?name SYMBOL)
+   (?class SYMBOL (eq ?class SF_VARIABLE))
+   (?parent SYMBOL
+            INSTANCE-NAME)
+   (?value LEXEME))
+  (construct-instance ?name singlefield-variable ?parent ?value))
+(defmethod construct-instance
+  ((?name SYMBOL)
+   (?class SYMBOL (eq ?class MF_GBL_VARIABLE))
+   (?parent SYMBOL
+            INSTANCE-NAME)
+   (?value LEXEME))
+  (construct-instance ?name multifield-global-variable ?parent ?value))
+(defmethod construct-instance
+  ((?name SYMBOL)
+   (?class SYMBOL (eq ?class GBL_VARIABLE))
+   (?parent SYMBOL
+            INSTANCE-NAME)
+   (?value LEXEME))
+  (construct-instance ?name global-variable ?parent ?value))
+
+
 (defclass list
   (is-a thing)
   (multislot contents))
@@ -355,10 +429,10 @@
                         (name ?top)
                         (contents $?contents))
          =>
-         (bind ?name (instance-name (make-instance of typed-scalar-thing
-                                                   (parent ?top)
-                                                   (type ?type)
-                                                   (value ?value))))
+         (bind ?name (construct-instance (gensym*)
+                                         ?type
+                                         ?top
+                                         ?value))
          (modify-instance ?f2 (contents $?contents ?name))
          (modify ?f (elements)))
 
@@ -944,9 +1018,8 @@
                                     ?var =(is-equals-sign) ?value
                                     $?rest)
                        (name ?parent))
-         ?f2 <- (object (is-a typed-scalar-thing)
+         ?f2 <- (object (is-a global-variable|multifield-global-variable)
                         (name ?var)
-                        (type GBL_VARIABLE)
                         (parent ?parent))
          ?f3 <- (object (is-a thing)
                         (name ?value)
@@ -973,9 +1046,8 @@
                                     ?var =(is-equals-sign) ?value&:(not (instance-namep ?value))
                                     $?rest)
                        (name ?parent))
-         ?f2 <- (object (is-a typed-scalar-thing)
+         ?f2 <- (object (is-a global-variable|multifield-global-variable)
                         (name ?var)
-                        (type GBL_VARIABLE)
                         (parent ?parent))
          =>
          (bind ?assignment 
