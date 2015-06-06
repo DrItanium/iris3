@@ -177,6 +177,12 @@
   (slot value
         (visibility public)
         (default ?NONE)))
+(defclass typed-scalar-thing
+  (is-a scalar-thing)
+  (slot type
+        (type SYMBOL)
+        (default ?NONE)))
+
 (defclass lexeme
   (is-a scalar-thing)
   (slot value
@@ -278,7 +284,7 @@
                    "r") then
            (assert (lexer (file ?path)
                           (router ?name)
-                          (elements (read ?name))
+                          (elements (next-token ?name))
                           (top ?name)))
            else
            (printout werror 
@@ -293,9 +299,8 @@
          =>
          ; read an entire line at a time instead so we can capture quoted parens ahead of time
          (bind ?next (next-token ?name))
-         (if (neq ?next 
-                  EOF) then
-           (modify ?f (elements ?name))
+         (if (neq ?next EOF) then
+           (modify ?f (elements ?next))
            else
            (modify ?f (fully-loaded TRUE))))
 
@@ -339,11 +344,91 @@
          (modify ?f (elements)
                  (top ?parent)))
 
+(defrule parse-special-element
+         (declare (salience 1))
+         (stage (current lex))
+         ?f <- (lexer (fully-loaded FALSE)
+                      (elements ?type ?value)
+                      (top ?top))
+         ?f2 <- (object (is-a list)
+                        (name ?top)
+                        (contents $?contents))
+         =>
+         (bind ?name (instance-name (make-instance of typed-scalar-thing
+                                                   (parent ?top)
+                                                   (type ?type)
+                                                   (value ?value))))
+         (modify-instance ?f2 (contents $?contents ?name))
+         (modify ?f (elements)))
+
+(defrule warn:parse-special-element-outside-list
+         (declare (salience 1))
+         (stage (current lex))
+         ?f <- (lexer (fully-loaded FALSE)
+                      (elements ?type ?value)
+                      (router ?top)
+                      (top ?top&:(symbolp ?top)))
+         =>
+         (printout WERROR "WARNING: Found a special tag outside a list!" crlf)
+         (make-instance of typed-scalar-thing
+                        (parent ?top)
+                        (type ?type)
+                        (value ?value))
+         (modify ?f (elements)))
+
+
+(defrule parse-normal-element
+         (declare (salience 1))
+         (stage (current lex))
+         ?f <- (lexer (fully-loaded FALSE)
+                      (elements ?value)
+                      (top ?top))
+         ?f2 <- (object (is-a list)
+                        (name ?top)
+                        (contents $?contents))
+         =>
+         (modify ?f (elements))
+         (modify-instance ?f2 (contents ?contents 
+                                        ?value)))
+
+(defrule warn:parse-normal-element-outside-list
+         (declare (salience 1))
+         (stage (current lex))
+         ?f <- (lexer (fully-loaded FALSE)
+                      (elements ?value)
+                      (router ?top)
+                      (top ?top&:(symbolp ?top)))
+         =>
+         (format WERROR 
+                 "WARNING: Found a %s (%s) outside a list!%n" 
+                 (class ?value)
+                 ?value)
+         (modify ?f (elements))
+         (make-instance of typed-scalar-thing
+                        (parent ?top)
+                        (type (class ?value))
+                        (value ?value)))
+
+
+(defrule error:end-list-without-beginning
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (lexer (fully-loaded FALSE)
+                      (elements RPAREN ?)
+                      (router ?top)
+                      (top ?top)
+                      (file ?file))
+         =>
+         (printout WERROR
+                   "ERROR: " ?file crlf
+                   tab "found a ) outside an actual list!" crlf)
+         (halt))
+
+
 (defrule finished-completely
          (stage (current lex))
          ?f <- (lexer (fully-loaded TRUE)
                       (elements)
-                      (file ?path)
                       (router ?name))
          =>
          (close ?name)
@@ -1241,14 +1326,10 @@
                                  $?rest))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f 
-                          (contents ?before 
-                                    (make-instance of defclass-single-slot
-                                                   (slot-name ?name)
-                                                   (parent ?parent)
-                                                   (facets ?rest))
-
-                                    ?after)))
+         (make-instance ?curr of defclass-single-slot
+                        (slot-name ?name)
+                        (parent ?parent)
+                        (facets ?rest)))
 
 (defrule translate-defclass:convert-multislot
          (stage (current parse))
@@ -1264,14 +1345,10 @@
                                  $?rest))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f 
-                          (contents ?before 
-                                    (make-instance of defclass-multislot 
-                                                   (slot-name ?name)
-                                                   (parent ?parent)
-                                                   (facets ?rest))
-
-                                    ?after)))
+         (make-instance ?curr of defclass-multislot 
+                        (slot-name ?name)
+                        (parent ?parent)
+                        (facets ?rest)))
 
 (defrule translate-slot:type
          (stage (current parse))
@@ -1500,12 +1577,13 @@
                                   $?expressions))
          =>
          (unmake-instance ?f2)
+         (make-instance ?curr of default
+                        (parent ?parent)
+                        (variable nil)
+                        (expressions ?expressions))
          (modify-instance ?f
                           (facets ?a ?b)
-                          (default-value (make-instance of default
-                                                        (parent ?parent)
-                                                        (variable nil)
-                                                        (expressions ?expressions)))))
+                          (default-value ?curr)))
 
 (defrule translate-slot:default:none-derive
          (declare (salience 1))
@@ -1521,11 +1599,12 @@
                                   ?c&"?NONE"|"?DERIVE"))
          =>
          (unmake-instance ?f2)
+         (make-instance ?curr of default
+                        (parent ?parent)
+                        (variable ?c))
          (modify-instance ?f
                           (facets ?a ?b)
-                          (default-value (make-instance of default
-                                                        (parent ?parent)
-                                                        (variable ?c)))))
+                          (default-value ?curr)))
 
 
 (defrule translate-slot:default-dynamic:expression
@@ -1541,10 +1620,11 @@
                                   $?expressions))
          =>
          (unmake-instance ?f2)
-         (modify-instance ?f
-                          (default-value (make-instance of default-dynamic
-                                                        (parent ?parent)
-                                                        (expressions ?expressions)))))
+         (make-instance ?curr of default-dynamic
+                        (parent ?parent)
+                        (expressions ?expressions))
+         (modify-instance ?f (facets ?a ?b)
+                          (default-value ?curr)))
 
 (defrule translate-slot:defclass-slot:storage
          (stage (current parse))
@@ -1559,7 +1639,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (storage ?storage)))
 
 (defrule translate-slot:defclass-slot:access
@@ -1575,7 +1655,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (access ?access)))
 
 (defrule translate-slot:defclass-slot:propagation
@@ -1591,7 +1671,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (propagation ?propagation)))
 
 (defrule translate-slot:defclass-slot:source
@@ -1607,7 +1687,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (source ?source)))
 
 (defrule translate-slot:defclass-slot:pattern-match
@@ -1623,7 +1703,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (pattern-match ?pattern-match)))
 (defrule translate-slot:defclass-slot:visibility
          (stage (current parse))
@@ -1638,7 +1718,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (visibility ?visibility)))
 
 (defrule translate-slot:defclass-slot:create-accessor
@@ -1654,7 +1734,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (create-accessor ?create-accessor)))
 (defrule translate-slot:defclass-slot:override-message
          (stage (current parse))
@@ -1669,7 +1749,7 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f 
-                          (facets ?a ?b)
+                          (facets ?a ?c)
                           (override-message ?override-message)))
 
 (defrule translate-deftemplate:comment
@@ -1714,13 +1794,10 @@
                                   $?facets))
          =>
          (unmake-instance ?f2)
-         (modify-instance ?f 
-                          (slots ?a 
-                                 (make-instance of deftemplate-single-slot
-                                                (parent ?parent)
-                                                (slot-name ?name)
-                                                (facets ?facets))
-                                 ?b)))
+         (make-instance ?slot of deftemplate-single-slot
+                        (parent ?parent)
+                        (slot-name ?name)
+                        (facets ?facets)))
 
 (defrule translate-deftemplate:multislot
          (stage (current parse))
@@ -1736,10 +1813,7 @@
                                   $?facets))
          =>
          (unmake-instance ?f2)
-         (modify-instance ?f 
-                          (slots ?a 
-                                 (make-instance of deftemplate-multislot
-                                                (parent ?parent)
-                                                (slot-name ?name)
-                                                (facets ?facets))
-                                 ?b)))
+         (make-instance ?slot of deftemplate-multislot
+                        (parent ?parent)
+                        (slot-name ?name)
+                        (facets ?facets)))
