@@ -267,77 +267,6 @@
                          non-reactive))
   (multislot contents))
 
-(defgeneric split
-            "splits a lexeme given a delimiter")
-(defgeneric extract-quoted-parens
-            "extracts quoted parens out of a line")
-(defgeneric new-lexeme-node
-            "constructs a new lexeme object")
-(defglobal MAIN
-           ?*quoted-open-paren* = "\"(\""
-           ?*quoted-close-paren* = "\")\"")
-(defmethod split
-  ((?line LEXEME)
-   (?delim LEXEME))
-  (bind ?len (str-length ?line))
-  (if (or (eq ?line 
-              ?delim)
-          (= ?len 0)) then
-    (return (create$ ?line)))
-  (bind ?index (str-index ?delim ?line))
-  (if ?index then
-    (bind ?delim-len (str-length ?delim))
-    ; we need to split this code up
-    (bind ?before (sub-string 1 
-                              (- ?index 1) 
-                              ?line))
-    (bind ?current (sub-string ?index 
-                               (+ ?index (- ?delim-len 1)) 
-                               ?line))
-    (bind ?after (sub-string (+ ?index ?delim-len)
-                             ?len
-                             ?line))
-    (return (create$ (split ?before 
-                            ?delim)
-                     ?current
-                     (split ?after 
-                            ?delim)))
-    else
-    (return (create$ ?line))))
-
-(defmethod extract-quoted-parens
-  ((?line LEXEME)
-   (?parent SYMBOL))
-  (bind ?e (create$))
-  (bind ?q (split ?line
-                  ?*quoted-open-paren*))
-  (progn$ (?op (split ?line
-                      ?*quoted-open-paren*))
-          (if (eq ?op
-                  ?*quoted-open-paren*) then
-            (bind ?e (create$ ?e 
-                              (new-lexeme-node ?op
-                                               ?parent)))
-            else
-            (progn$ (?c (split ?op
-                               ?*quoted-close-paren*)) then
-                    (if (eq ?c
-                            ?*quoted-close-paren*) then
-                      (bind ?e (create$ ?e
-                                        (new-lexeme-node ?c
-                                                         ?parent)))
-                      else
-                      (bind ?e (create$ ?e 
-                                        (explode$ ?c)))))))
-  (return ?e))
-
-(defmethod new-lexeme-node
-  ((?value LEXEME)
-   (?parent INSTANCE-NAME
-            SYMBOL))
-  (instance-name (make-instance of lexeme
-                                (parent ?parent)
-                                (value ?value))))
 (defrule open-file
          (stage (current load))
          ?f <- (open ?path)
@@ -349,54 +278,77 @@
                    "r") then
            (assert (lexer (file ?path)
                           (router ?name)
-                          (elements (read ?name))))
+                          (elements (read ?name))
+                          (top ?name)))
            else
            (printout werror 
                      "couldn't open " ?path crlf)))
 (defrule read-element
          (stage (current lex))
-         ?f <- (lexer (file ?path)
+         ?f <- (lexer (fully-loaded FALSE)
+                      (elements)
+                      (file ?path)
                       (router ?name)
-                      (elements $?elements)
-                      (fully-loaded FALSE))
+                      (top ?top))
          =>
          ; read an entire line at a time instead so we can capture quoted parens ahead of time
-         (bind ?next (readline ?name))
+         (bind ?next (next-token ?name))
          (if (neq ?next 
                   EOF) then
-           (bind ?result (extract-quoted-parens ?next
-                                                ?name))
-           (modify ?f (elements ?elements ?result))
+           (modify ?f (elements ?name))
            else
            (modify ?f (fully-loaded TRUE))))
 
-(defrule mark-sub-list
-         (declare (salience 1))
+(defrule new-top-level
+         (declare (salience 2))
          (stage (current lex))
-         ?f <- (lexer (elements $?before 
-                                "(" $?inner&:(and (not (member$ ")" 
-                                                                ?inner))
-                                                  (not (member$ "(" 
-                                                                ?inner))) 
-                                ")" 
-                                $?after)
-                      (router ?parent))
+         ?f <- (lexer (fully-loaded FALSE)
+                      (elements LPAREN ?)
+                      (router ?top)
+                      (top ?top&:(symbolp ?top)))
          =>
-         (modify ?f (elements ?before 
-                              (instance-name (make-instance of list
-                                                            (parent ?parent)
-                                                            (contents ?inner)))
-                              ?after)))
+         (bind ?name (instance-name (make-instance of list
+                                                   (parent ?top))))
+         (modify ?f (elements)
+                 (top ?name)))
+(defrule new-list
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (lexer (fully-loaded FALSE)
+                      (elements LPAREN ?)
+                      (top ?top&:(instance-namep ?top)))
+         ?f2 <- (object (is-a list)
+                        (name ?top)
+                        (contents $?contents))
+         =>
+         (bind ?name (instance-name (make-instance of list
+                                                   (parent ?top))))
+         (modify-instance ?f2 (contents ?contents ?name))
+         (modify ?f (elements)
+                 (top ?name)))
+(defrule end-list
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (lexer (fully-loaded FALSE)
+                      (elements RPAREN ?)
+                      (top ?top&:(instance-namep ?top)))
+         ?f2 <- (object (is-a list)
+                        (name ?top)
+                        (parent ?parent))
+         =>
+         (modify ?f (elements)
+                 (top ?parent)))
 
 (defrule finished-completely
          (stage (current lex))
-         ?f <- (lexer (file ?path)
-                      (router ?name)
-                      (elements $?elements)
-                      (fully-loaded TRUE))
+         ?f <- (lexer (fully-loaded TRUE)
+                      (elements)
+                      (file ?path)
+                      (router ?name))
          =>
          (close ?name)
          (retract ?f))
+;-----------------------------------------------------------------------------
 (defrule translate-defrule:comment:no-decl
          (declare (salience 1))
          (stage (current parse))
