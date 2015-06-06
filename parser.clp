@@ -148,10 +148,6 @@
              (slot router
                    (type SYMBOL)
                    (default ?NONE))
-             (slot fully-loaded
-                   (type SYMBOL)
-                   (allowed-symbols FALSE 
-                                    TRUE))
              (slot top
                    (type SYMBOL
                          INSTANCE-NAME)
@@ -160,7 +156,8 @@
 (defclass thing
   (is-a USER)
   (slot parent 
-        (type SYMBOL)
+        (type SYMBOL
+              INSTANCE-NAME)
         (default ?NONE)))
 (defclass has-comment
   (is-a USER)
@@ -189,6 +186,20 @@
         (type LEXEME)
         (source composite)
         (storage local)))
+(defclass global-variable
+  (is-a scalar-thing))
+(defclass multifield-variable
+  (is-a scalar-thing))
+(defclass singlefield-variable
+  (is-a scalar-thing))
+(defclass multifield-global-variable
+  (is-a scalar-thing))
+(defclass not-constraint
+  (is-a scalar-thing))
+(defclass and-constraint
+  (is-a scalar-thing))
+(defclass or-constraint
+  (is-a scalar-thing))
 (defclass list
   (is-a thing)
   (multislot contents))
@@ -291,24 +302,17 @@
                      "couldn't open " ?path crlf)))
 (defrule read-element
          (stage (current lex))
-         ?f <- (lexer (fully-loaded FALSE)
-                      (elements)
+         ?f <- (lexer (elements)
                       (file ?path)
                       (router ?name)
                       (top ?top))
          =>
          ; read an entire line at a time instead so we can capture quoted parens ahead of time
-         (bind ?next (next-token ?name))
-         (if (neq ?next EOF) then
-           (modify ?f (elements ?next))
-           else
-           (modify ?f (fully-loaded TRUE))))
-
+         (modify ?f (elements (next-token ?name))))
 (defrule new-top-level
          (declare (salience 2))
          (stage (current lex))
-         ?f <- (lexer (fully-loaded FALSE)
-                      (elements LPAREN ?)
+         ?f <- (lexer (elements LPAREN ?)
                       (router ?top)
                       (top ?top&:(symbolp ?top)))
          =>
@@ -319,8 +323,7 @@
 (defrule new-list
          (declare (salience 2))
          (stage (current lex))
-         ?f <- (lexer (fully-loaded FALSE)
-                      (elements LPAREN ?)
+         ?f <- (lexer (elements LPAREN ?)
                       (top ?top&:(instance-namep ?top)))
          ?f2 <- (object (is-a list)
                         (name ?top)
@@ -334,8 +337,7 @@
 (defrule end-list
          (declare (salience 2))
          (stage (current lex))
-         ?f <- (lexer (fully-loaded FALSE)
-                      (elements RPAREN ?)
+         ?f <- (lexer (elements RPAREN ?)
                       (top ?top&:(instance-namep ?top)))
          ?f2 <- (object (is-a list)
                         (name ?top)
@@ -347,8 +349,7 @@
 (defrule parse-special-element
          (declare (salience 1))
          (stage (current lex))
-         ?f <- (lexer (fully-loaded FALSE)
-                      (elements ?type ?value)
+         ?f <- (lexer (elements ?type ?value)
                       (top ?top))
          ?f2 <- (object (is-a list)
                         (name ?top)
@@ -364,12 +365,11 @@
 (defrule warn:parse-special-element-outside-list
          (declare (salience 1))
          (stage (current lex))
-         ?f <- (lexer (fully-loaded FALSE)
-                      (elements ?type ?value)
+         ?f <- (lexer (elements ?type ?value)
                       (router ?top)
                       (top ?top&:(symbolp ?top)))
          =>
-         (printout WERROR "WARNING: Found a special tag outside a list!" crlf)
+         (printout werror "WARNING: Found a special tag outside a list!" crlf)
          (make-instance of typed-scalar-thing
                         (parent ?top)
                         (type ?type)
@@ -380,8 +380,7 @@
 (defrule parse-normal-element
          (declare (salience 1))
          (stage (current lex))
-         ?f <- (lexer (fully-loaded FALSE)
-                      (elements ?value)
+         ?f <- (lexer (elements ?value)
                       (top ?top))
          ?f2 <- (object (is-a list)
                         (name ?top)
@@ -394,12 +393,11 @@
 (defrule warn:parse-normal-element-outside-list
          (declare (salience 1))
          (stage (current lex))
-         ?f <- (lexer (fully-loaded FALSE)
-                      (elements ?value)
+         ?f <- (lexer (elements ?value)
                       (router ?top)
                       (top ?top&:(symbolp ?top)))
          =>
-         (format WERROR 
+         (format werror 
                  "WARNING: Found a %s (%s) outside a list!%n" 
                  (class ?value)
                  ?value)
@@ -413,22 +411,20 @@
 (defrule error:end-list-without-beginning
          (declare (salience 2))
          (stage (current lex))
-         ?f <- (lexer (fully-loaded FALSE)
-                      (elements RPAREN ?)
+         ?f <- (lexer (elements RPAREN ?)
                       (router ?top)
                       (top ?top)
                       (file ?file))
          =>
-         (printout WERROR
+         (printout werror
                    "ERROR: " ?file crlf
                    tab "found a ) outside an actual list!" crlf)
          (halt))
 
-
 (defrule finished-completely
+         (declare (salience 3))
          (stage (current lex))
-         ?f <- (lexer (fully-loaded TRUE)
-                      (elements)
+         ?f <- (lexer (elements STOP ?)
                       (router ?name))
          =>
          (close ?name)
@@ -727,12 +723,10 @@
                        (contents $?contents))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f 
-                          (matches $?before 
-                                   (instance-name (make-instance of match
-                                                                 (parent ?parent)
-                                                                 (contents ?contents))) 
-                                   $?after)))
+         (make-instance ?list of match
+                        (parent ?parent)
+                        (contents ?contents)))
+
 ;TODO: handle multiline strings
 (defrule translate-match:binding
          "Before we construct defrule's we have to capture bound matches to prevent a matching ambiguity in a defrule between a comment and a bound match (both of them will show up as strings)"
@@ -895,10 +889,9 @@
                        (contents message-handler ?name))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f (contents ?before (make-instance of message-handler-documentation
-                                                              (parent ?parent)
-                                                              (handler-name ?name)) 
-                                       ?after)))
+         (make-instance ?curr of message-handler-documentation
+                        (parent ?parent)
+                        (handler-name ?name)))
 (defrule translate-defclass:convert-message-handler-documentation:type
          (stage (current parse))
          ?f <- (object (is-a defclass)
@@ -909,14 +902,10 @@
                        (contents message-handler ?name ?type))
          =>
          (unmake-instance ?q)
-         (modify-instance ?f 
-                          (contents ?before 
-                                    (make-instance of message-handler-documentation
-                                                   (parent ?parent)
-                                                   (handler-name ?name)
-                                                   (handler-type ?type))
-
-                                    ?after)))
+         (make-instance ?curr of message-handler-documentation
+                        (parent ?parent)
+                        (handler-name ?name)
+                        (handler-type ?type)))
 
 
 (defrule translate-defglobal:module
@@ -925,10 +914,11 @@
                        (contents defglobal 
                                  ?module&:(symbolp ?module)
                                  $?rest)
-                       (parent ?parent))
+                       (parent ?parent)
+                       (name ?name))
          =>
          (unmake-instance ?f)
-         (make-instance of defglobal
+         (make-instance ?name of defglobal
                         (parent ?parent)
                         (module ?module)
                         (assignments ?rest)))
@@ -938,27 +928,67 @@
          ?f <- (object (is-a list)
                        (contents defglobal 
                                  $?rest)
-                       (parent ?parent))
+                       (parent ?parent)
+                       (name ?name))
          =>
          (unmake-instance ?f)
-         (make-instance of defglobal
+         (make-instance ?name of defglobal
                         (parent ?parent)
                         (assignments ?rest)))
 
-(defrule build-defglobal-assignment
+(deffunction is-equals-sign () =)
+(defrule build-defglobal-assignment:value-is-list
          (stage (current parse))
          ?f <- (object (is-a defglobal)
                        (assignments $?before 
-                                    ?var =(string-to-field "=") ?value 
+                                    ?var =(is-equals-sign) ?value
                                     $?rest)
                        (name ?parent))
+         ?f2 <- (object (is-a typed-scalar-thing)
+                        (name ?var)
+                        (type GBL_VARIABLE)
+                        (parent ?parent))
+         ?f3 <- (object (is-a thing)
+                        (name ?value)
+                        (parent ?parent))
          =>
+         (bind ?assignment 
+               (instance-name (make-instance of defglobal-assignment
+                                             (parent ?parent)
+                                             (variable ?var)
+                                             (value ?value))))
+         (modify-instance ?f2 (parent ?assignment))
+         (modify-instance ?f3 (parent ?assignment))
+         ; TODO: expand this to support nested lists and such 
+         ; (need to take over parentage since it is a new list)
          (modify-instance ?f 
                           (assignments ?before
-                                       (make-instance of defglobal-assignment
-                                                      (parent ?parent)
-                                                      (variable ?var)
-                                                      (value ?value))
+                                       ?assignment
+                                       ?rest)))
+
+(defrule build-defglobal-assignment:value-is-scalar
+         (stage (current parse))
+         ?f <- (object (is-a defglobal)
+                       (assignments $?before 
+                                    ?var =(is-equals-sign) ?value&:(not (instance-namep ?value))
+                                    $?rest)
+                       (name ?parent))
+         ?f2 <- (object (is-a typed-scalar-thing)
+                        (name ?var)
+                        (type GBL_VARIABLE)
+                        (parent ?parent))
+         =>
+         (bind ?assignment 
+               (instance-name (make-instance of defglobal-assignment
+                                             (parent ?parent)
+                                             (variable ?var)
+                                             (value ?value))))
+         (modify-instance ?f2 (parent ?assignment))
+         ; TODO: expand this to support nested lists and such 
+         ; (need to take over parentage since it is a new list)
+         (modify-instance ?f 
+                          (assignments ?before
+                                       ?assignment
                                        ?rest)))
 
 (defclass defmodule
@@ -1015,12 +1045,9 @@
                                   $?rest))
          =>
          (unmake-instance ?f2)
-         (modify-instance ?a
-                          (specifications $?a
-                                          (instance-name (make-instance of export-specification
-                                                                        (parent ?parent)
-                                                                        (items $?rest)))
-                                          $?b))) 
+         (make-instance ?b of export-specification
+                        (parent ?parent)
+                        (items $?rest)))
 (defrule expand-export-specification:all-or-none
          (stage (current parse))
          ?f <- (object (is-a export-specification)
@@ -1073,12 +1100,9 @@
                                   $?rest))
          =>
          (unmake-instance ?f2)
-         (modify-instance ?a
-                          (specifications $?a
-                                          (instance-name (make-instance of import-specification
-                                                                        (parent ?parent)
-                                                                        (qualifiers $?rest)))
-                                          $?b))) 
+         (make-instance ?b of import-specification
+                        (parent ?parent)
+                        (qualifiers ?rest)))
 
 (defrule expand-import-specification:all-or-none
          (stage (current parse))
