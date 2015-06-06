@@ -154,6 +154,8 @@
                          INSTANCE-NAME)
                    (default ?NONE))
              (multislot elements))
+(defgeneric construct-instance
+            "constructs an instance of soemthing given a series of variables. Returns the instance name of the thing")
 (defclass thing
   (is-a USER)
   (slot parent 
@@ -175,19 +177,27 @@
   (slot value
         (visibility public)
         (default ?NONE)))
+(defmethod construct-instance
+  ((?class SYMBOL)
+   (?parent SYMBOL
+            INSTANCE-NAME)
+   ?value)
+  (instance-name (make-instance of ?class 
+                                (parent ?parent)
+                                (value ?value))))
 (defclass typed-scalar-thing
   (is-a scalar-thing)
   (slot type
         (type SYMBOL)
         (default ?NONE)))
 
-(defclass lexeme
+(defclass string
+  "Strings need to be wrapped in their own nodes"
   (is-a scalar-thing)
   (slot value
-        (type LEXEME)
+        (type STRING)
         (source composite)
         (storage local)))
-
 (defclass global-variable (is-a scalar-thing))
 (defclass multifield-global-variable (is-a scalar-thing))
 (defclass multifield-variable (is-a scalar-thing))
@@ -197,86 +207,67 @@
 (defclass or-constraint (is-a scalar-thing))
 (defclass multifield-wildcard (is-a scalar-thing))
 (defclass singlefield-wildcard (is-a scalar-thing))
-(defgeneric construct-instance
-            "constructs an instance of soemthing given a series of variables. Returns the instance name of the thing")
-(defmethod construct-instance
-  ((?name SYMBOL)
-   (?class SYMBOL)
-   (?parent SYMBOL
-            INSTANCE-NAME)
-   (?value LEXEME))
-  (instance-name (make-instance ?name of ?class 
-                                (parent ?parent)
-                                (value ?value))))
 
 (defmethod construct-instance
-  ((?name SYMBOL)
-   (?class SYMBOL (eq ?class OR_CONSTRAINT))
+  ((?class SYMBOL (eq ?class OR_CONSTRAINT))
    (?parent SYMBOL
             INSTANCE-NAME)
    (?value LEXEME))
-  (construct-instance ?name or-constraint ?parent ?value))
+  (construct-instance or-constraint ?parent ?value))
 (defmethod construct-instance
-  ((?name SYMBOL)
-   (?class SYMBOL (eq ?class AND_CONSTRAINT))
+  ((?class SYMBOL (eq ?class AND_CONSTRAINT))
    (?parent SYMBOL
             INSTANCE-NAME)
    (?value LEXEME))
-  (construct-instance ?name and-constraint ?parent ?value))
+  (construct-instance and-constraint ?parent ?value))
 (defmethod construct-instance
-  ((?name SYMBOL)
-   (?class SYMBOL (eq ?class NOT_CONSTRAINT))
+  ((?class SYMBOL (eq ?class NOT_CONSTRAINT))
    (?parent SYMBOL
             INSTANCE-NAME)
    (?value LEXEME))
-  (construct-instance ?name not-constraint ?parent ?value))
+  (construct-instance not-constraint ?parent ?value))
 (defmethod construct-instance
-  ((?name SYMBOL)
-   (?class SYMBOL (eq ?class MF_WILDCARD))
+  ((?class SYMBOL (eq ?class MF_WILDCARD))
    (?parent SYMBOL
             INSTANCE-NAME)
    (?value LEXEME))
-  (construct-instance ?name multifield-wildcard ?parent ?value))
+  (construct-instance multifield-wildcard ?parent ?value))
 (defmethod construct-instance
-  ((?name SYMBOL)
-   (?class SYMBOL (eq ?class SF_WILDCARD))
+  ((?class SYMBOL (eq ?class SF_WILDCARD))
    (?parent SYMBOL
             INSTANCE-NAME)
    (?value LEXEME))
-  (construct-instance ?name singlefield-wildcard ?parent ?value))
+  (construct-instance singlefield-wildcard ?parent ?value))
 (defmethod construct-instance
-  ((?name SYMBOL)
-   (?class SYMBOL (eq ?class MF_VARIABLE))
+  ((?class SYMBOL (eq ?class MF_VARIABLE))
    (?parent SYMBOL
             INSTANCE-NAME)
    (?value LEXEME))
-  (construct-instance ?name multifield-variable ?parent ?value))
+  (construct-instance multifield-variable ?parent ?value))
 (defmethod construct-instance
-  ((?name SYMBOL)
-   (?class SYMBOL (eq ?class SF_VARIABLE))
+  ((?class SYMBOL (eq ?class SF_VARIABLE))
    (?parent SYMBOL
             INSTANCE-NAME)
    (?value LEXEME))
-  (construct-instance ?name singlefield-variable ?parent ?value))
+  (construct-instance singlefield-variable ?parent ?value))
 (defmethod construct-instance
-  ((?name SYMBOL)
-   (?class SYMBOL (eq ?class MF_GBL_VARIABLE))
+  ((?class SYMBOL (eq ?class MF_GBL_VARIABLE))
    (?parent SYMBOL
             INSTANCE-NAME)
    (?value LEXEME))
-  (construct-instance ?name multifield-global-variable ?parent ?value))
+  (construct-instance multifield-global-variable ?parent ?value))
 (defmethod construct-instance
-  ((?name SYMBOL)
-   (?class SYMBOL (eq ?class GBL_VARIABLE))
+  ((?class SYMBOL (eq ?class GBL_VARIABLE))
    (?parent SYMBOL
             INSTANCE-NAME)
    (?value LEXEME))
-  (construct-instance ?name global-variable ?parent ?value))
+  (construct-instance global-variable ?parent ?value))
 
 
 (defclass list
   (is-a thing)
   (multislot contents))
+
 (defclass match
   (is-a thing)
   (slot binding
@@ -429,11 +420,10 @@
                         (name ?top)
                         (contents $?contents))
          =>
-         (bind ?name (construct-instance (gensym*)
-                                         ?type
-                                         ?top
-                                         ?value))
-         (modify-instance ?f2 (contents $?contents ?name))
+         (modify-instance ?f2 (contents $?contents
+                                        (construct-instance ?type
+                                                            ?top
+                                                            ?value)))
          (modify ?f (elements)))
 
 (defrule warn:parse-special-element-outside-list
@@ -444,13 +434,25 @@
                       (top ?top&:(symbolp ?top)))
          =>
          (printout werror "WARNING: Found a special tag outside a list!" crlf)
-         (make-instance of typed-scalar-thing
-                        (parent ?top)
-                        (type ?type)
-                        (value ?value))
+         (construct-instance ?type 
+                             ?top 
+                             ?value)
          (modify ?f (elements)))
 
-
+(defrule parse-string
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (lexer (elements ?value&:(stringp ?value))
+                      (top ?top))
+         ?f2 <- (object (is-a list)
+                        (name ?top)
+                        (contents $?contents))
+         =>
+         (modify ?f (elements))
+         (modify-instance ?f2 (contents $?contents 
+                                        (construct-instance string
+                                                            ?top
+                                                            ?value))))
 (defrule parse-normal-element
          (declare (salience 1))
          (stage (current lex))
