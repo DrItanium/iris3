@@ -17,6 +17,7 @@
 ; 3. This notice may not be removed or altered from any source distribution.
 (defglobal MAIN 
            ?*priority:first* = 10000
+           ?*priority:three* = 3
            ?*priority:two* = 2
            ?*priority:one* = 1
            ?*priority:last* = -9999
@@ -134,9 +135,13 @@
            ?list))
 (defgeneric no-strings-in-list
             "checks to see if the given list is free of strings")
+(deffunction is-string-class
+             (?value)
+             (and (instance-namep ?value)
+                  (eq (class ?value) string)))
 (defmethod no-strings-in-list
   ((?list MULTIFIELD))
-  (not (exists$ stringp
+  (not (exists$ is-string-class
                 ?list)))
 (defmethod no-strings-in-list
   ($?list)
@@ -278,12 +283,14 @@
   (is-a thing
         has-comment)
   (slot salience
-        (type INTEGER)
+        (type INTEGER
+              INSTANCE-NAME)
         (range -10000
                10000)
         (default-dynamic 0))
   (slot auto-focus
-        (type SYMBOL)
+        (type SYMBOL
+              INSTANCE-NAME)
         (allowed-symbols FALSE
                          TRUE))
   (multislot matches)
@@ -518,6 +525,92 @@
          (close ?name)
          (retract ?f))
 ;-----------------------------------------------------------------------------
+(defclass defrule-declaration
+  (is-a thing)
+  (slot salience 
+        (type INTEGER
+              INSTANCE-NAME)
+        (range -10000
+               10000)
+        (default-dynamic 0))
+  (slot auto-focus
+        (type SYMBOL
+              INSTANCE-NAME)
+        (allowed-symbols FALSE
+                         TRUE)
+        (default-dynamic FALSE)))
+(defrule capture-declarations:both:salience-first
+         (declare (salience ?*priority:three*))
+         (stage (current parse))
+         ?f <- (object (is-a list)
+                       (contents declare ?salience ?auto-focus)
+                       (name ?name)
+                       (parent ?parent))
+         ?f2 <- (object (is-a list)
+                        (name ?salience)
+                        (contents salience ?s-value))
+         ?f3 <- (object (is-a list)
+                        (name ?auto-focus)
+                        (contents auto-focus ?af-value))
+         =>
+         (unmake-instance ?f ?f2 ?f3)
+         (make-instance ?name of defrule-declaration
+                        (parent ?parent)
+                        (salience ?s-value)
+                        (auto-focus ?af-value)))
+                         
+(defrule capture-declarations:both:salience-second
+         (declare (salience ?*priority:three*))
+         (stage (current parse))
+         ?f <- (object (is-a list)
+                       (contents declare ?auto-focus ?salience)
+                       (name ?name)
+                       (parent ?parent))
+         ?f2 <- (object (is-a list)
+                        (name ?salience)
+                        (contents salience ?s-value))
+         ?f3 <- (object (is-a list)
+                        (name ?auto-focus)
+                        (contents auto-focus ?af-value))
+         =>
+         (unmake-instance ?f ?f2 ?f3)
+         (make-instance ?name of defrule-declaration
+                        (parent ?parent)
+                        (salience ?s-value)
+                        (auto-focus ?af-value)))
+
+(defrule capture-declarations:auto-focus-only
+         (declare (salience ?*priority:three*))
+         (stage (current parse))
+         ?f <- (object (is-a list)
+                       (contents declare ?auto-focus)
+                       (name ?name)
+                       (parent ?parent))
+         ?f3 <- (object (is-a list)
+                        (name ?auto-focus)
+                        (contents auto-focus ?af-value))
+         =>
+         (unmake-instance ?f ?f3)
+         (make-instance ?name of defrule-declaration
+                        (parent ?parent)
+                        (auto-focus ?af-value)))
+
+(defrule capture-declarations:salience-only
+         (declare (salience ?*priority:three*))
+         (stage (current parse))
+         ?f <- (object (is-a list)
+                       (contents declare ?salience)
+                       (name ?name)
+                       (parent ?parent))
+         ?f2 <- (object (is-a list)
+                        (name ?salience)
+                        (contents salience ?s-value))
+         =>
+         (unmake-instance ?f ?f2)
+         (make-instance ?name of defrule-declaration
+                        (parent ?parent)
+                        (salience ?s-value)))
+
 (defrule translate-defrule:comment:no-decl
          (declare (salience 1))
          (stage (current parse))
@@ -525,14 +618,17 @@
                        (parent ?parent)
                        (contents defrule 
                                  ?name 
-                                 ?comment&:(stringp ?comment)
+                                 ?comment
                                  $?matches
                                  =>
                                  $?body))
+         ?f2 <- (object (is-a string)
+                        (name ?comment)
+                        (value ?cvalue))
          =>
-         (unmake-instance ?f)
+         (unmake-instance ?f ?f2)
          (make-instance ?name of defrule 
-                        (comment ?comment)
+                        (comment ?cvalue)
                         (parent ?parent)
                         (body ?body)
                         (matches ?matches)))
@@ -554,37 +650,37 @@
                         (matches ?matches)
                         (body ?body)))
 
-(defrule translate-defrule:comment:decl:salience-only
-         (declare (salience 1))
+(defrule translate-defrule:comment:decl
+         (declare (salience 2))
          (stage (current parse))
          ?f <- (object (is-a list)
                        (parent ?parent)
                        (contents defrule 
                                  ?name 
-                                 ?comment&:(stringp ?comment)
+                                 ?comment
                                  ?decl
                                  $?matches
                                  =>
                                  $?body))
-         ?f2 <- (object (is-a list)
+         ?f4 <- (object (is-a string)
+                        (name ?comment)
+                        (value ?cvalue))
+         ?f2 <- (object (is-a defrule-declaration)
                         (name ?decl)
-                        (contents declare 
-                                  ?salience-list))
-         ?f3 <- (object (is-a list)
-                        (name ?salience-list)
-                        (contents salience 
-                                  ?salience))
-         =>
-         (unmake-instance ?f ?f2 ?f3)
-         (make-instance ?name of defrule 
                         (salience ?salience)
-                        (comment ?comment)
+                        (auto-focus ?auto-focus))
+         =>
+         (unmake-instance ?f ?f2 ?f4)
+         (make-instance ?name of defrule 
+                        (auto-focus ?auto-focus)
+                        (salience ?salience)
+                        (comment ?cvalue)
                         (parent ?parent)
                         (body ?body)
                         (matches ?matches)))
 
-(defrule translate-defrule:no-comment:decl:salience-only
-         (declare (salience 1))
+(defrule translate-defrule:no-comment:decl
+         (declare (salience 2))
          (stage (current parse))
          ?f <- (object (is-a list)
                        (parent ?parent)
@@ -594,212 +690,42 @@
                                  $?matches&:(no-strings-in-list ?matches)
                                  =>
                                  $?body))
-         ?f2 <- (object (is-a list)
+         ?f2 <- (object (is-a defrule-declaration)
                         (name ?decl)
-                        (contents declare 
-                                  ?salience-list))
-         ?f3 <- (object (is-a list)
-                        (name ?salience-list)
-                        (contents salience 
-                                  ?salience))
+                        (salience ?salience)
+                        (auto-focus ?auto-focus))
          =>
-         (unmake-instance ?f)
+         (unmake-instance ?f ?f2)
          (make-instance ?name of defrule
+          (auto-focus ?auto-focus)
                         (salience ?salience)
                         (parent ?parent)
                         (matches ?matches)
                         (body ?body)))
 
-(defrule translate-defrule:comment:decl:auto-focus-only
-         (declare (salience 1))
-         (stage (current parse))
-         ?f <- (object (is-a list)
-                       (parent ?parent)
-                       (contents defrule 
-                                 ?name 
-                                 ?comment&:(stringp ?comment)
-                                 ?decl
-                                 $?matches
-                                 =>
-                                 $?body))
-         ?f2 <- (object (is-a list)
-                        (name ?decl)
-                        (contents declare 
-                                  ?auto-focus-list))
-         ?f3 <- (object (is-a list)
-                        (name ?auto-focus-list)
-                        (contents auto-focus 
-                                  ?auto-focus))
-         =>
-         (unmake-instance ?f ?f2 ?f3)
-         (make-instance ?name of defrule 
-                        (auto-focus ?auto-focus)
-                        (comment ?comment)
-                        (parent ?parent)
-                        (body ?body)
-                        (matches ?matches)))
 
-(defrule translate-defrule:no-comment:decl:auto-focus-only
+(defrule update-auto-focus
          (declare (salience 1))
          (stage (current parse))
-         ?f <- (object (is-a list)
-                       (parent ?parent)
-                       (contents defrule
-                                 ?name
-                                 ?decl
-                                 $?matches&:(no-strings-in-list ?matches)
-                                 =>
-                                 $?body))
-         ?f2 <- (object (is-a list)
-                        (name ?decl)
-                        (contents declare
-                                  ?auto-focus-list))
-         ?f3 <- (object (is-a list)
-                        (name ?auto-focus-list)
-                        (contents auto-focus 
-                                  ?auto-focus))
+         (object (is-a defrule)
+                 (name ?name)
+                 (auto-focus ?focus))
+         ?f2 <- (object (is-a thing)
+                        (name ?focus)
+                        (parent ~?name))
          =>
-         (unmake-instance ?f ?f2 ?f3)
-         (make-instance ?name of defrule
-                        (auto-focus ?auto-focus)
-                        (parent ?parent)
-                        (matches ?matches)
-                        (body ?body)))
-
-(defrule translate-defrule:comment:decl:both-salience-first
+         (modify-instance ?f2 (parent ?name)))
+(defrule update-salience
          (declare (salience 1))
          (stage (current parse))
-         ?f <- (object (is-a list)
-                       (parent ?parent)
-                       (contents defrule 
-                                 ?name 
-                                 ?comment&:(stringp ?comment)
-                                 ?decl
-                                 $?matches
-                                 =>
-                                 $?body))
-         ?f2 <- (object (is-a list)
-                        (name ?decl)
-                        (contents declare 
-                                  ?salience-list
-                                  ?auto-focus-list))
-         ?f3 <- (object (is-a list)
-                        (name ?salience-list)
-                        (contents salience
-                                  ?salience))
-         ?f4 <- (object (is-a list)
-                        (name ?auto-focus-list)
-                        (contents auto-focus 
-                                  ?auto-focus))
+         (object (is-a defrule)
+                 (name ?name)
+                 (salience ?salience))
+         ?f2 <- (object (is-a thing)
+                        (name ?salience)
+                        (parent ~?name))
          =>
-         (unmake-instance ?f ?f2 ?f3 ?f4)
-         (make-instance ?name of defrule 
-                        (salience ?salience)
-                        (auto-focus ?auto-focus)
-                        (comment ?comment)
-                        (parent ?parent)
-                        (body ?body)
-                        (matches ?matches)))
-
-(defrule translate-defrule:comment:decl:both-salience-second
-         (declare (salience 1))
-         (stage (current parse))
-         ?f <- (object (is-a list)
-                       (parent ?parent)
-                       (contents defrule 
-                                 ?name 
-                                 ?comment&:(stringp ?comment)
-                                 ?decl
-                                 $?matches
-                                 =>
-                                 $?body))
-         ?f2 <- (object (is-a list)
-                        (name ?decl)
-                        (contents declare 
-                                  ?auto-focus-list
-                                  ?salience-list))
-         ?f3 <- (object (is-a list)
-                        (name ?salience-list)
-                        (contents salience
-                                  ?salience))
-         ?f4 <- (object (is-a list)
-                        (name ?auto-focus-list)
-                        (contents auto-focus 
-                                  ?auto-focus))
-         =>
-         (unmake-instance ?f ?f2 ?f3 ?f4)
-         (make-instance ?name of defrule 
-                        (salience ?salience)
-                        (auto-focus ?auto-focus)
-                        (comment ?comment)
-                        (parent ?parent)
-                        (body ?body)
-                        (matches ?matches)))
-
-(defrule translate-defrule:no-comment:decl:both-salience-first
-         (declare (salience 1))
-         (stage (current parse))
-         ?f <- (object (is-a list)
-                       (parent ?parent)
-                       (contents defrule
-                                 ?name
-                                 ?decl
-                                 $?matches&:(no-strings-in-list ?matches)
-                                 =>
-                                 $?body))
-         ?f2 <- (object (is-a list)
-                        (name ?decl)
-                        (contents declare
-                                  ?salience-list
-                                  ?auto-focus-list))
-         ?f3 <- (object (is-a list)
-                        (name ?auto-focus-list)
-                        (contents auto-focus 
-                                  ?auto-focus))
-         ?f4 <- (object (is-a list)
-                        (name ?salience-list)
-                        (contents salience 
-                                  ?salience))
-         =>
-         (unmake-instance ?f ?f2 ?f3 ?f4)
-         (make-instance ?name of defrule
-                        (salience ?salience)
-                        (auto-focus ?auto-focus)
-                        (parent ?parent)
-                        (matches ?matches)
-                        (body ?body)))
-(defrule translate-defrule:no-comment:decl:both-salience-second
-         (declare (salience 1))
-         (stage (current parse))
-         ?f <- (object (is-a list)
-                       (parent ?parent)
-                       (contents defrule
-                                 ?name
-                                 ?decl
-                                 $?matches&:(no-strings-in-list ?matches)
-                                 =>
-                                 $?body))
-         ?f2 <- (object (is-a list)
-                        (name ?decl)
-                        (contents declare
-                                  ?auto-focus-list
-                                  ?salience-list))
-         ?f3 <- (object (is-a list)
-                        (name ?auto-focus-list)
-                        (contents auto-focus 
-                                  ?auto-focus))
-         ?f4 <- (object (is-a list)
-                        (name ?salience-list)
-                        (contents salience 
-                                  ?salience))
-         =>
-         (unmake-instance ?f ?f2 ?f3 ?f4)
-         (make-instance ?name of defrule
-                        (salience ?salience)
-                        (auto-focus ?auto-focus)
-                        (parent ?parent)
-                        (matches ?matches)
-                        (body ?body)))
+         (modify-instance ?f2 (parent ?name)))
 
 (defrule translate-match:no-binding
          (stage (current parse))
@@ -830,10 +756,10 @@
                         (contents $?contents))
          =>
          (unmake-instance ?f2)
-         (bind ?z (instance-name (make-instance ?list of match
-                                                (parent ?parent)
-                                                (binding ?var)
-                                                (contents ?contents))))
+         (make-instance ?list of match
+                        (parent ?parent)
+                        (binding ?var)
+                        (contents ?contents))
          (modify-instance ?f
                           (contents $?before
                                     ?list
@@ -846,17 +772,20 @@
                        (name ?parent)
                        (contents deffunction 
                                  ?name 
-                                 ?comment&:(stringp ?comment)
+                                 ?comment
                                  ?args
                                  $?body))
+         ?k <- (object (is-a string)
+                       (name ?comment)
+                       (value ?cvalue))
          ?j <- (object (is-a list)
                        (name ?args)
                        (contents $?a))
          =>
-         (unmake-instance ?j ?f)
+         (unmake-instance ?j ?f ?k)
          (make-instance ?name of deffunction
                         (parent ?parent)
-                        (comment ?comment)
+                        (comment ?cvalue)
                         (arguments ?a)
                         (body ?body)))
 (defrule translate-deffunction:no-comment
@@ -894,10 +823,13 @@
                        (contents defgeneric
                                  ?name
                                  ?comment))
+         ?f2 <- (object (is-a string)
+                        (name ?comment)
+                        (value ?cvalue))
          =>
-         (unmake-instance ?f)
+         (unmake-instance ?f ?f2)
          (make-instance ?name of defgeneric 
-                        (comment ?comment)
+                        (comment ?cvalue)
                         (parent ?parent)))
 (defrule translate-defclass:comment
          (stage (current parse))
@@ -905,17 +837,20 @@
                        (parent ?parent)
                        (contents defclass 
                                  ?name
-                                 ?comment&:(stringp ?comment)
+                                 ?comment
                                  ?is-a
                                  $?rest))
+         ?f3 <- (object (is-a string)
+                        (name ?comment)
+                        (value ?cvalue))
          ?f2 <- (object (is-a list)
                         (name ?is-a)
                         (contents is-a $?ia))
          =>
-         (unmake-instance ?f ?f2)
+         (unmake-instance ?f ?f2 ?f3)
          (make-instance ?name of defclass
                         (parent ?parent)
-                        (comment ?comment)
+                        (comment ?cvalue)
                         (inherits-from ?ia)
                         (contents ?rest)))
 
