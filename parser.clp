@@ -276,12 +276,16 @@
 (defclass match
   (is-a thing)
   (slot binding
-        (type LEXEME))
+        (type LEXEME
+              INSTANCE-NAME))
   (multislot contents))
 
 (defclass defrule
   (is-a thing
         has-comment)
+  (slot rule-name
+        (type SYMBOL)
+        (default ?NONE))
   (slot salience
         (type INTEGER
               INSTANCE-NAME)
@@ -299,12 +303,18 @@
 (defclass deffunction
   (is-a thing
         has-comment)
+  (slot function-name
+        (type SYMBOL)
+        (default ?NONE))
   (multislot arguments)
   (multislot body))
 
 (defclass defgeneric
   (is-a thing
-        has-comment))
+        has-comment)
+  (slot generic-name
+        (type SYMBOL)
+        (default ?NONE)))
 
 (defclass defmethod
   (is-a thing
@@ -329,6 +339,9 @@
 (defclass deftemplate
   (is-a thing
         has-comment)
+  (slot template-name
+        (type SYMBOL)
+        (default ?NONE))
   (multislot slots))
 
 (defclass message-handler-documentation
@@ -345,6 +358,9 @@
 (defclass defclass
   (is-a thing
         has-comment)
+  (slot class-name
+        (type SYMBOL)
+        (default ?NONE))
   (multislot inherits-from)
   (slot role
         (type SYMBOL)
@@ -615,19 +631,21 @@
          (declare (salience 1))
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (parent ?parent)
                        (contents defrule 
-                                 ?name 
+                                 ?rule-name 
                                  ?comment
                                  $?matches
                                  =>
-                                 $?body))
+                                 $?body)
+                       (parent ?parent)
+                       (name ?name))
          ?f2 <- (object (is-a string)
                         (name ?comment)
                         (value ?cvalue))
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defrule 
+                        (rule-name ?rule-name)
                         (comment ?cvalue)
                         (parent ?parent)
                         (body ?body)
@@ -637,15 +655,17 @@
          (declare (salience 1))
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (parent ?parent)
                        (contents defrule
-                                 ?name
+                                 ?rule-name
                                  $?matches&:(no-strings-in-list ?matches)
                                  =>
-                                 $?body))
+                                 $?body)
+                       (parent ?parent)
+                       (name ?name))
          =>
          (unmake-instance ?f)
          (make-instance ?name of defrule
+                        (rule-name ?rule-name)
                         (parent ?parent)
                         (matches ?matches)
                         (body ?body)))
@@ -654,14 +674,15 @@
          (declare (salience 2))
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (parent ?parent)
                        (contents defrule 
-                                 ?name 
+                                 ?rule-name 
                                  ?comment
                                  ?decl
                                  $?matches
                                  =>
-                                 $?body))
+                                 $?body)
+                       (parent ?parent)
+                       (name ?name))
          ?f4 <- (object (is-a string)
                         (name ?comment)
                         (value ?cvalue))
@@ -672,6 +693,7 @@
          =>
          (unmake-instance ?f ?f2 ?f4)
          (make-instance ?name of defrule 
+                        (rule-name ?rule-name)
                         (auto-focus ?auto-focus)
                         (salience ?salience)
                         (comment ?cvalue)
@@ -683,13 +705,14 @@
          (declare (salience 2))
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (parent ?parent)
                        (contents defrule
-                                 ?name
+                                 ?rule-name
                                  ?decl
                                  $?matches&:(no-strings-in-list ?matches)
                                  =>
-                                 $?body))
+                                 $?body)
+                       (parent ?parent)
+                       (name ?name))
          ?f2 <- (object (is-a defrule-declaration)
                         (name ?decl)
                         (salience ?salience)
@@ -697,6 +720,7 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defrule
+          (rule-name ?rule-name)
           (auto-focus ?auto-focus)
                         (salience ?salience)
                         (parent ?parent)
@@ -744,7 +768,7 @@
 ;TODO: handle multiline strings
 (defrule translate-match:binding
          "Before we construct defrule's we have to capture bound matches to prevent a matching ambiguity in a defrule between a comment and a bound match (both of them will show up as strings)"
-         (declare (salience ?*priority:two*))
+         (declare (salience ?*priority:three*))
          (stage (current parse))
          ?f <- (object (is-a list)
                        (contents $?before 
@@ -766,15 +790,18 @@
                                     $?after)))
 
 
+
 (defrule translate-deffunction:comment
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (name ?parent)
                        (contents deffunction 
-                                 ?name 
+                                 ?func-name 
                                  ?comment
                                  ?args
-                                 $?body))
+                                 $?body)
+                       (parent ?parent)
+                       (name ?name))
+
          ?k <- (object (is-a string)
                        (name ?comment)
                        (value ?cvalue))
@@ -784,6 +811,7 @@
          =>
          (unmake-instance ?j ?f ?k)
          (make-instance ?name of deffunction
+                        (function-name ?func-name)
                         (parent ?parent)
                         (comment ?cvalue)
                         (arguments ?a)
@@ -791,17 +819,20 @@
 (defrule translate-deffunction:no-comment
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (parent ?parent)
                        (contents deffunction 
-                                 ?name 
+                                 ?func-name 
                                  ?args
-                                 $?body))
+                                 $?body)
+                       (parent ?parent)
+                       (name ?name))
+
          ?j <- (object (is-a list)
                        (name ?args)
                        (contents $?a))
          =>
          (unmake-instance ?j ?f)
          (make-instance ?name of deffunction
+                        (function-name ?func-name)
                         (parent ?parent)
                         (arguments ?a)
                         (body ?body)))
@@ -809,37 +840,42 @@
 (defrule translate-defgeneric:no-comment
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (parent ?parent)
                        (contents defgeneric
-                                 ?name))
+                                 ?gen-name)
+                       (parent ?parent)
+                       (name ?name))
          =>
          (unmake-instance ?f)
          (make-instance ?name of defgeneric 
+                        (generic-name ?gen-name)
                         (parent ?parent)))
 (defrule translate-defgeneric:comment
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (parent ?parent)
                        (contents defgeneric
-                                 ?name
-                                 ?comment))
+                                 ?gen-name
+                                 ?comment)
+                       (parent ?parent)
+                       (name ?name))
          ?f2 <- (object (is-a string)
                         (name ?comment)
                         (value ?cvalue))
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defgeneric 
+                        (generic-name ?gen-name)
                         (comment ?cvalue)
                         (parent ?parent)))
 (defrule translate-defclass:comment
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (parent ?parent)
                        (contents defclass 
-                                 ?name
+                                 ?class-name
                                  ?comment
                                  ?is-a
-                                 $?rest))
+                                 $?rest)
+                       (parent ?parent)
+                       (name ?name))
          ?f3 <- (object (is-a string)
                         (name ?comment)
                         (value ?cvalue))
@@ -849,6 +885,7 @@
          =>
          (unmake-instance ?f ?f2 ?f3)
          (make-instance ?name of defclass
+                        (class-name ?class-name)
                         (parent ?parent)
                         (comment ?cvalue)
                         (inherits-from ?ia)
@@ -858,17 +895,19 @@
 (defrule translate-defclass:no-comment
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (parent ?parent)
                        (contents defclass 
-                                 ?name
+                                 ?class-name
                                  ?is-a
-                                 $?rest))
+                                 $?rest)
+                       (parent ?parent)
+                       (name ?name))
          ?f2 <- (object (is-a list)
                         (name ?is-a)
                         (contents is-a $?ia))
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defclass
+                        (class-name ?class-name)
                         (parent ?parent)
                         (inherits-from ?ia)
                         (contents ?rest)))
@@ -1801,13 +1840,15 @@
          (stage (current parse))
          ?f <- (object (is-a list)
                        (contents deftemplate
-                                 ?name 
+                                 ?template-name 
                                  ?comment&:(stringp ?comment)
                                  $?slots)
-                       (parent ?parent))
+                       (parent ?parent)
+                       (name ?name))
          =>
          (unmake-instance ?f)
          (make-instance ?name of deftemplate
+          (template-name ?template-name)
                         (comment ?comment)
                         (parent ?parent)
                         (slots $?slots)))
@@ -1816,12 +1857,14 @@
          (stage (current parse))
          ?f <- (object (is-a list)
                        (contents deftemplate
-                                 ?name 
+                                 ?template-name 
                                  $?slots&:(no-strings-in-list ?slots))
-                       (parent ?parent))
+                       (parent ?parent)
+                       (name ?name))
          =>
          (unmake-instance ?f)
          (make-instance ?name of deftemplate
+          (template-name ?template-name)
                         (parent ?parent)
                         (slots $?slots)))
 
