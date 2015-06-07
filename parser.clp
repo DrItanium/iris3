@@ -453,6 +453,18 @@
                                         (construct-instance string
                                                             ?top
                                                             ?value))))
+(defrule parse-string-outside-list
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (lexer (elements ?value&:(stringp ?value))
+                      (top ?top&:(symbolp ?top)))
+         =>
+         (printout werror "WARNING: Found a string outside a list!" crlf)
+         (modify ?f (elements))
+         (make-instance of string
+                        (parent ?top)
+                        (value ?value)))
+
 (defrule parse-normal-element
          (declare (salience 1))
          (stage (current lex))
