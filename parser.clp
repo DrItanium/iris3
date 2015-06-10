@@ -282,13 +282,6 @@
   (is-a thing)
   (multislot contents))
 
-
-
-
-
-
-
-
 (defrule open-file
          (stage (current load))
          ?f <- (open ?path)
