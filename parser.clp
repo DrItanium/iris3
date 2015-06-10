@@ -135,13 +135,22 @@
            ?list))
 (defgeneric no-strings-in-list
             "checks to see if the given list is free of strings")
-(deffunction is-string-class
+(defgeneric no-primitive-strings-in-list
+            "checks to see if the given list is free of primitive strings")
+(deffunction string-classp
              (?value)
              (and (instance-namep ?value)
                   (eq (class ?value) string)))
+(defmethod no-primitive-strings-in-list
+  ((?list MULTIFIELD))
+  (not (exists$ stringp
+                ?list)))
+(defmethod no-primitive-strings-in-list
+  ($?list)
+  (no-primitive-strings-in-list ?list))
 (defmethod no-strings-in-list
   ((?list MULTIFIELD))
-  (not (exists$ is-string-class
+  (not (exists$ string-classp
                 ?list)))
 (defmethod no-strings-in-list
   ($?list)
@@ -449,6 +458,3 @@
          (close ?name)
          (retract ?f))
 ;-----------------------------------------------------------------------------
-
-
-

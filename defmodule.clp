@@ -20,6 +20,7 @@
   (is-a thing
         has-comment)
   (multislot specifications))
+; TODO: flesh out further
 (defrule build-defmodule:comment
          (stage (current parse))
          ?f <- (object (is-a list)
@@ -36,6 +37,19 @@
          (make-instance ?name of defmodule
                         (parent  ?parent)
                         (comment ?cvalue)
+                        (specifications ?specs)))
+
+(defrule build-defmodule:no-comment
+         (stage (current parse))
+         ?f <- (object (is-a list)
+                       (parent ?parent)
+                       (contents defmodules
+                                 ?name
+                                 $?specs&:(no-strings-in-list ?specs)))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?name of defmodule
+                        (parent  ?parent)
                         (specifications ?specs)))
 
 
@@ -59,6 +73,14 @@
   (is-a port-specification)
   (role concrete)
   (pattern-match reactive))
+(defclass import-specification
+  (is-a port-specification)
+  (role concrete)
+  (pattern-match reactive)
+  (slot module-name
+        (type SYMBOL)
+        (visibility public)
+        (default ?NONE)))
 
 (defrule build-export-specification
          (stage (current parse))
@@ -88,32 +110,35 @@
          ?f  <- (object (is-a export-specification)
                         (construct undefined)
                         (qualifiers ?construct&deftemplate|defclass|defglobal|deffunction|defgeneric
-                                    ?qualifier&"?ALL"|"?NONE"))
+                                   ?qualifier))
+         ?f2 <- (object (is-a singlefield-variable)
+                        (name ?qualifier)
+                        (value "?ALL"|"?NONE"))
          =>
          (modify-instance ?f 
                           (construct ?construct)
                           (qualifiers ?qualifier)))
-
 (defrule expand-export-specification:specific-construct-and-qualifiers
          (stage (current parse))
          ?f <- (object (is-a export-specification)
                        (construct undefined)
                        (qualifiers ?construct&deftemplate|defclass|defglobal|deffunction|defgeneric
-                                   $?qualifiers&:(and (> (length$ ?qualifiers) 0)
-                                                      (no-strings-in-list $?qualifiers))))
+                                   $?qualifiers&:(and (not (empty$ ?qualifiers))
+                                                      (no-primitive-strings-in-list $?qualifiers))))
          =>
          (modify-instance ?f
                           (construct ?construct)
                           (qualifiers ?qualifiers)))
 
-(defclass import-specification
-  (is-a port-specification)
-  (role concrete)
-  (pattern-match reactive)
-  (slot module-name
-        (type SYMBOL)
-        (visibility public)
-        (default ?NONE)))
+(defrule expand-export-specification:error:no-qualifiers
+         (stage (current parse))
+         ?f <- (object (is-a export-specification)
+                       (construct undefined)
+                       (qualifiers ?construct&deftemplate|defclass|defglobal|deffunction|defgeneric))
+         =>
+         (printout werror "ERROR: no qualifiers specified for export-specification!" crlf)
+         (halt))
+
 
 (defrule build-import-specification
          (stage (current parse))
@@ -137,8 +162,12 @@
          ?f <- (object (is-a import-specification)
                        (construct undefined)
                        (qualifiers ?module-name&:(symbolp ?module-name)
-                                   ?qualifier&"?ALL"|"?NONE"))
+                                   ?qualifier))
+         ?f2 <- (object (is-a singlefield-variable)
+                        (name ?qualifier)
+                        (value "?ALL"|"?NONE"))
          =>
+         (unmake-instance ?f2)
          (modify-instance ?f 
                           (module-name ?module-name)
                           (construct nil)
@@ -149,8 +178,12 @@
                         (construct undefined)
                         (qualifiers ?module-name&:(symbolp ?module-name)
                                     ?construct&deftemplate|defclass|defglobal|deffunction|defgeneric
-                                    ?qualifier&"?ALL"|"?NONE"))
+                                    ?qualifier))
+         ?f2 <- (object (is-a singlefield-variable)
+                        (name ?qualifier)
+                        (value "?ALL"|"?NONE"))
          =>
+         (unmake-instance ?f2)
          (modify-instance ?f 
                           (module-name ?module-name)
                           (construct ?construct)
@@ -162,8 +195,8 @@
                        (construct undefined)
                        (qualifiers ?module-name&:(symbolp ?module-name)
                                    ?construct&deftemplate|defclass|defglobal|deffunction|defgeneric
-                                   $?qualifiers&:(and (> (length$ ?qualifiers) 0)
-                                                      (no-strings-in-list $?qualifiers))))
+                                   $?qualifiers&:(and (not (empty$ ?qualifiers))
+                                                      (no-primitive-strings-in-list $?qualifiers))))
          =>
          (modify-instance ?f
                           (module-name ?module-name)
