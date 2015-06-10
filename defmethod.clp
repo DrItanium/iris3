@@ -29,6 +29,8 @@
         (allowed-classes list)
         (default ?NONE))
   (multislot body))
+(defclass defmethod-argument-list
+  (is-a composite-thing))
 
 
 (defrule build:defmethod:index:comment
@@ -46,10 +48,15 @@
                         (name ?comment)
                         (value ?cvalue))
          ; just match against it to make sure
-         (object (is-a list)
-                 (name ?args))
+         ?f3 <- (object (is-a list)
+                        (name ?args)
+                        (parent ?aparent)
+                        (contents $?contents))
          =>
-         (unmake-instance ?f ?f2)
+         (unmake-instance ?f ?f2 ?f3)
+         (make-instance ?args of defmethod-argument-list
+                        (parent ?aparent)
+                        (contents ?contents))
          (make-instance ?id of defmethod
                         (parent ?parent)
                         (method-name ?name)
@@ -68,10 +75,15 @@
                        (name ?id)
                        (parent ?parent))
          ; just match against it to make sure
-         (object (is-a list)
-                 (name ?args))
+         ?f2 <- (object (is-a list)
+                        (name ?args)
+                        (parent ?aparent)
+                        (contents $?contents))
          =>
-         (unmake-instance ?f)
+         (unmake-instance ?f ?f2)
+         (make-instance ?args of defmethod-argument-list
+                        (parent ?aparent)
+                        (contents ?contents))
          (make-instance ?id of defmethod
                         (parent ?parent)
                         (method-name ?name)
@@ -92,10 +104,15 @@
          ?f2 <- (object (is-a string)
                         (name ?comment)
                         (value ?cvalue))
-         (object (is-a list)
-                 (name ?args))
+         ?f3 <- (object (is-a list)
+                        (name ?args)
+                        (parent ?aparent)
+                        (contents $?contents))
          =>
-         (unmake-instance ?f ?f2)
+         (unmake-instance ?f ?f2 ?f3)
+         (make-instance ?args of defmethod-argument-list
+                        (parent ?aparent)
+                        (contents $?contents))
          (make-instance ?id of defmethod
                         (parent ?parent)
                         (method-name ?name)
@@ -112,10 +129,15 @@
                                  $?body)
                        (name ?id)
                        (parent ?parent))
-         (object (is-a list)
-                 (name ?args))
+         ?f2 <- (object (is-a list)
+                        (name ?args)
+                        (parent ?aparent)
+                        (contents $?contents))
          =>
-         (unmake-instance ?f)
+         (unmake-instance ?f ?f2)
+         (make-instance ?args of defmethod-argument-list
+                        (parent ?aparent)
+                        (contents $?contents))
          (make-instance ?id of defmethod
                         (parent ?parent)
                         (method-name ?name)
@@ -140,17 +162,69 @@
   (= (length$ ?list)
      (length$ ?result)))
 (defmethod all-symbolsp
- ($?list)
- (all-symbolsp ?list))
+  ($?list)
+  (all-symbolsp ?list))
+
+(defmethod multifield-variablep
+  ((?var INSTANCE))
+  (eq (class ?var)
+      multifield-variable))
+
+; we leave the bare ? and $? options alone as it make reconstruction easier
+(defrule build:defmethod-argument:wildcard-parameter:nested-list:types-and-query
+         (stage (current parse))
+         (object (is-a defmethod-argument-list)
+                 (name ?args)
+                 (contents $?before ?last))
+         ?f2 <- (object (is-a list)
+                        (name ?last)
+                        (contents ?mname
+                                  ?type&:(symbolp ?type)
+                                  $?types&:(all-symbolsp ?types)
+                                  ?query))
+         ?f3 <- (object (is-a multifield-variable)
+                        (name ?mname))
+         ?f4 <- (object (is-a list|global-variable)
+                        (name ?query))
+         =>
+         (unmake-instance ?f2)
+         (bind ?name (instance-name (make-instance ?last of defmethod-argument
+                                                   (argument-name ?last)
+                                                   (parent ?args)
+                                                   (types ?type ?types)
+                                                   (query ?query))))
+         (modify-instance ?f3 (parent ?name))
+         (modify-instance ?f4 (parent ?name)))
+
+(defrule build:defmethod-argument:wildcard-parameter:nested-list:types-only
+         (stage (current parse))
+         (object (is-a defmethod-argument-list)
+                 (name ?args)
+                 (contents $?before ?last))
+         ?f2 <- (object (is-a list)
+                        (name ?last)
+                        (contents ?mname
+                                  ?type&:(symbolp ?type)
+                                  $?types&:(all-symbolsp ?types)))
+         ?f3 <- (object (is-a multifield-variable)
+                        (name ?mname))
+         =>
+         (unmake-instance ?f2)
+         (modify-instance ?f3 
+                          (parent (instance-name (make-instance ?last of defmethod-argument
+                                                                (argument-name ?last)
+                                                                (parent ?args)
+                                                                (types ?type ?types))))))
+
+
+
 
 (defrule build:defmethod-argument:single-field
          (stage (current parse))
-         (object (is-a defmethod)
-                 (args ?args))
-         ?f2 <- (object (is-a list)
-                        (name ?args)
-                        (contents $?before ?target $?after))
-         ?f3 <- (object (is-a singlefield-variable)
+         ?f <- (object (is-a defmethod-argument-list)
+                       (name ?args)
+                       (contents $?before ?target $?after))
+         ?f2 <- (object (is-a singlefield-variable)
                         (name ?target))
          =>
          (bind ?name (instance-name (make-instance of defmethod-argument
@@ -229,13 +303,16 @@
                         (argument-name ?option)
                         (types ?type ?types)))
 
+
 (defrule error:build:defmethod-argument:parameterized:multifield-variable
          (stage (current parse))
          (object (is-a defmethod)
                  (args ?args))
          ?f2 <- (object (is-a list)
                         (name ?args)
-                        (contents $? ?target $?))
+                        (contents $? ?target 
+                                  ; continue on if we aren't the last element in the list
+                                  $?after&:(not (empty$ ?after))))
          ?f3 <- (object (is-a list)
                         (name ?target)
                         (contents ?option
@@ -246,3 +323,21 @@
          =>
          (printout werror "ERROR: provided a non singlefield-variable (" ?option-value ") for a defmethod!" crlf)
          (halt))
+
+(defrule error:build:defmethod-argument:parameterized:variable-only-in-list
+         (stage (current parse))
+         (object (is-a defmethod)
+                 (args ?args))
+         (object (is-a list)
+                 (name ?args)
+                 (contents $? ?target $?))
+         (object (is-a list)
+                 (name ?target)
+                 (contents ?option))
+         (object (is-a singlefield-variable)
+                 (name ?option)
+                 (value ?option-value))
+         =>
+         (printout werror "ERROR: query and/or types necessary for nested method argument (" ?option-value ") for a defmethod!" crlf)
+         (halt))
+
