@@ -324,18 +324,6 @@
   (multislot args)
   (multislot body))
 
-(defclass defglobal
-  (is-a thing)
-  (slot module 
-        (type SYMBOL))
-  (multislot assignments))
-(defclass defglobal-assignment
-  (is-a thing)
-  (slot variable 
-        (type STRING)
-        (default ?NONE))
-  (slot value
-        (default ?NONE)))
 
 (defclass message-handler-documentation
   (is-a thing)
@@ -963,86 +951,6 @@
                         (handler-type ?type)))
 
 
-(defrule translate-defglobal:module
-         (stage (current parse))
-         ?f <- (object (is-a list)
-                       (contents defglobal 
-                                 ?module&:(symbolp ?module)
-                                 $?rest)
-                       (parent ?parent)
-                       (name ?name))
-         =>
-         (unmake-instance ?f)
-         (make-instance ?name of defglobal
-                        (parent ?parent)
-                        (module ?module)
-                        (assignments ?rest)))
-
-(defrule translate-defglobal:no-module
-         (stage (current parse))
-         ?f <- (object (is-a list)
-                       (contents defglobal 
-                                 $?rest)
-                       (parent ?parent)
-                       (name ?name))
-         =>
-         (unmake-instance ?f)
-         (make-instance ?name of defglobal
-                        (parent ?parent)
-                        (assignments ?rest)))
-
-(deffunction is-equals-sign () =)
-(defrule build-defglobal-assignment:value-is-list
-         (stage (current parse))
-         ?f <- (object (is-a defglobal)
-                       (assignments $?before 
-                                    ?var =(is-equals-sign) ?value
-                                    $?rest)
-                       (name ?parent))
-         ?f2 <- (object (is-a global-variable|multifield-global-variable)
-                        (name ?var)
-                        (parent ?parent))
-         ?f3 <- (object (is-a thing)
-                        (name ?value)
-                        (parent ?parent))
-         =>
-         (bind ?assignment 
-               (instance-name (make-instance of defglobal-assignment
-                                             (parent ?parent)
-                                             (variable ?var)
-                                             (value ?value))))
-         (modify-instance ?f2 (parent ?assignment))
-         (modify-instance ?f3 (parent ?assignment))
-         ; TODO: expand this to support nested lists and such 
-         ; (need to take over parentage since it is a new list)
-         (modify-instance ?f 
-                          (assignments ?before
-                                       ?assignment
-                                       ?rest)))
-
-(defrule build-defglobal-assignment:value-is-scalar
-         (stage (current parse))
-         ?f <- (object (is-a defglobal)
-                       (assignments $?before 
-                                    ?var =(is-equals-sign) ?value&:(not (instance-namep ?value))
-                                    $?rest)
-                       (name ?parent))
-         ?f2 <- (object (is-a global-variable|multifield-global-variable)
-                        (name ?var)
-                        (parent ?parent))
-         =>
-         (bind ?assignment 
-               (instance-name (make-instance of defglobal-assignment
-                                             (parent ?parent)
-                                             (variable ?var)
-                                             (value ?value))))
-         (modify-instance ?f2 (parent ?assignment))
-         ; TODO: expand this to support nested lists and such 
-         ; (need to take over parentage since it is a new list)
-         (modify-instance ?f 
-                          (assignments ?before
-                                       ?assignment
-                                       ?rest)))
 
 (defclass default-facet
   (is-a thing)
