@@ -217,127 +217,80 @@
                                                                 (types ?type ?types))))))
 
 
-
-
-(defrule build:defmethod-argument:single-field
+(defrule build:defmethod-argument:wildcard-parameter:nested-list:query
          (stage (current parse))
-         ?f <- (object (is-a defmethod-argument-list)
-                       (name ?args)
-                       (contents $?before ?target $?after))
-         ?f2 <- (object (is-a singlefield-variable)
-                        (name ?target))
+         (object (is-a defmethod-argument-list)
+                 (name ?args)
+                 (contents $?before ?last))
+         ?f2 <- (object (is-a list)
+                        (name ?last)
+                        (contents ?mname
+                                  ?query))
+         ?f4 <- (object (is-a multifield-variable)
+                        (name ?mname))
+         ?f3 <- (object (is-a list|global-variable)
+                        (name ?query))
          =>
-         (bind ?name (instance-name (make-instance of defmethod-argument
+         (unmake-instance ?f2)
+         (bind ?name (instance-name (make-instance ?last of defmethod-argument
+                                                   (argument-name ?last)
                                                    (parent ?args)
-                                                   (argument-name ?target))))
-         (modify-instance ?f2 
-                          (contents ?before ?name ?after))
-         (modify-instance ?f3
-                          (parent ?name)))
+                                                   (query ?query))))
+         (modify-instance ?f3 (parent ?name))
+         (modify-instance ?f4 (parent ?name)))
 
-(defrule build:defmethod-argument:parameterized:types-and-query
+; Error states
+(defrule error:defmethod-argument:wildcard-parameter:nested-list:no-types-or-query
          (stage (current parse))
+         (object (is-a defmethod-argument-list)
+                 (name ?args)
+                 (contents $?before ?last)
+                 (parent ?parent))
+         (object (is-a list)
+                 (name ?last)
+                 (contents ?mname))
          (object (is-a defmethod)
-                 (args ?args))
-         ?f2 <- (object (is-a list)
-                        (name ?args)
-                        (contents $? ?target $?))
-         ?f3 <- (object (is-a list)
-                        (name ?target)
-                        (contents ?option
-                                  ?type&:(symbolp ?type)
-                                  $?types&:(all-symbolsp ?types)
-                                  ?query))
-         (object (is-a singlefield-variable)
-                 (name ?option))
-         (object (is-a list|global-variable)
-                 (name ?query))
-         =>
-         (unmake-instance ?f3)
-         (make-instance ?target of defmethod-argument
-                        (parent ?args)
-                        (argument-name ?option)
-                        (types ?type ?types)
-                        (query ?query)))
+                 (name ?parent)
+                 (method-name ?name))
 
-(defrule build:defmethod-argument:parameterized:query-only
-         (stage (current parse))
-         (object (is-a defmethod)
-                 (args ?args))
-         ?f2 <- (object (is-a list)
-                        (name ?args)
-                        (contents $? ?target $?))
-         ?f3 <- (object (is-a list)
-                        (name ?target)
-                        (contents ?option
-                                  ?query))
-         (object (is-a singlefield-variable)
-                 (name ?option))
-         (object (is-a list|global-variable)
-                 (name ?query))
          =>
-         (unmake-instance ?f3)
-         (make-instance ?target of defmethod-argument
-                        (parent ?args)
-                        (argument-name ?option)
-                        (query ?query)))
-
-(defrule build:defmethod-argument:parameterized:types-only
-         (stage (current parse))
-         (object (is-a defmethod)
-                 (args ?args))
-         ?f2 <- (object (is-a list)
-                        (name ?args)
-                        (contents $? ?target $?))
-         ?f3 <- (object (is-a list)
-                        (name ?target)
-                        (contents ?option
-                                  ?type&:(symbolp ?type)
-                                  $?types&:(all-symbolsp ?types)))
-         (object (is-a singlefield-variable)
-                 (name ?option))
-         =>
-         (unmake-instance ?f3)
-         (make-instance ?target of defmethod-argument
-                        (parent ?args)
-                        (argument-name ?option)
-                        (types ?type ?types)))
-
-
-(defrule error:build:defmethod-argument:parameterized:multifield-variable
-         (stage (current parse))
-         (object (is-a defmethod)
-                 (args ?args))
-         ?f2 <- (object (is-a list)
-                        (name ?args)
-                        (contents $? ?target 
-                                  ; continue on if we aren't the last element in the list
-                                  $?after&:(not (empty$ ?after))))
-         ?f3 <- (object (is-a list)
-                        (name ?target)
-                        (contents ?option
-                                  $?))
-         (object (is-a ~singlefield-variable)
-                 (name ?option)
-                 (value ?option-value))
-         =>
-         (printout werror "ERROR: provided a non singlefield-variable (" ?option-value ") for a defmethod!" crlf)
+         (printout werror "ERROR: no type information provided in wildcard-parameter nested-list in defmethod: " ?name crlf)
          (halt))
 
-(defrule error:build:defmethod-argument:parameterized:variable-only-in-list
+(defrule error:defmethod-argument:wildcard-parameter:not-last-argument:bare
          (stage (current parse))
-         (object (is-a defmethod)
-                 (args ?args))
-         (object (is-a list)
+         (object (is-a defmethod-argument-list)
                  (name ?args)
-                 (contents $? ?target $?))
-         (object (is-a list)
-                 (name ?target)
-                 (contents ?option))
-         (object (is-a singlefield-variable)
-                 (name ?option)
-                 (value ?option-value))
+                 (contents $?before ?last ? $?)
+                 (parent ?parent))
+         (object (is-a multifield-variable)
+                 (name ?last))
+         (object (is-a defmethod)
+                 (name ?parent)
+                 (method-name ?name))
+
          =>
-         (printout werror "ERROR: query and/or types necessary for nested method argument (" ?option-value ") for a defmethod!" crlf)
+         (printout werror "ERROR: only the last argument of a defmethod list can be a wildcard-parameter!" crlf
+                          tab "Offending method is: " ?name crlf)
+         (halt))
+
+(defrule error:defmethod-argument:wildcard-parameter:not-last-argument:nested-list
+         (stage (current parse))
+         (object (is-a defmethod-argument-list)
+                 (name ?args)
+                 (contents $?before ?last ? $?)
+                 (parent ?parent))
+         (object (is-a list)
+                 (name ?last)
+                 (contents ?arg $?))
+         (object (is-a multifield-variable)
+                 (name ?arg))
+         (object (is-a defmethod)
+                 (name ?parent)
+                 (method-name ?name))
+
+         =>
+         (printout werror "ERROR: only the last argument of a defmethod list can be a wildcard-parameter!" crlf
+                          tab "Offending method is: " ?name crlf)
          (halt))
 
