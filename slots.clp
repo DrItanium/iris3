@@ -649,3 +649,41 @@
          (modify-instance ?f 
                           (facets ?a ?c)
                           (override-message ?override-message)))
+
+(defrule translate-deftemplate:slot
+         (stage (current parse))
+         ?f <- (object (is-a deftemplate)
+                       (slots $?a 
+                              ?slot
+                              $?b)
+                       (name ?parent))
+         ?f2 <- (object (is-a list)
+                        (name ?slot)
+                        (contents slot 
+                                  ?name
+                                  $?facets))
+         =>
+         (unmake-instance ?f2)
+         (make-instance ?slot of deftemplate-single-slot
+                        (parent ?parent)
+                        (slot-name ?name)
+                        (facets ?facets)))
+
+(defrule translate-deftemplate:multislot
+         (stage (current parse))
+         ?f <- (object (is-a deftemplate)
+                       (slots $?a 
+                              ?slot
+                              $?b)
+                       (name ?parent))
+         ?f2 <- (object (is-a list)
+                        (name ?slot)
+                        (contents multislot 
+                                  ?name
+                                  $?facets))
+         =>
+         (unmake-instance ?f2)
+         (make-instance ?slot of deftemplate-multislot
+                        (parent ?parent)
+                        (slot-name ?name)
+                        (facets ?facets)))

@@ -26,13 +26,16 @@
                        (parent ?parent)
                        (contents defmodules
                                  ?name
-                                 ?comment&:(stringp ?comment)
+                                 ?comment
                                  $?specs))
+         ?f2 <- (object (is-a string)
+                        (name ?comment)
+                        (value ?cvalue))
          =>
-         (unmake-instance ?f)
+         (unmake-instance ?f ?f2)
          (make-instance ?name of defmodule
                         (parent  ?parent)
-                        (comment ?comment)
+                        (comment ?cvalue)
                         (specifications ?specs)))
 
 

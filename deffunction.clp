@@ -35,7 +35,6 @@
                                  $?body)
                        (parent ?parent)
                        (name ?name))
-
          ?k <- (object (is-a string)
                        (name ?comment)
                        (value ?cvalue))

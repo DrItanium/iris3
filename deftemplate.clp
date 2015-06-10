@@ -29,15 +29,18 @@
          ?f <- (object (is-a list)
                        (contents deftemplate
                                  ?template-name 
-                                 ?comment&:(stringp ?comment)
+                                 ?comment
                                  $?slots)
                        (parent ?parent)
                        (name ?name))
+         ?f2 <- (object (is-a string)
+                        (name ?comment)
+                        (value ?cvalue))
          =>
-         (unmake-instance ?f)
+         (unmake-instance ?f ?f2)
          (make-instance ?name of deftemplate
-          (template-name ?template-name)
-                        (comment ?comment)
+                        (template-name ?template-name)
+                        (comment ?cvalue)
                         (parent ?parent)
                         (slots $?slots)))
 
@@ -56,40 +59,3 @@
                         (parent ?parent)
                         (slots $?slots)))
 
-(defrule translate-deftemplate:slot
-         (stage (current parse))
-         ?f <- (object (is-a deftemplate)
-                       (slots $?a 
-                              ?slot
-                              $?b)
-                       (name ?parent))
-         ?f2 <- (object (is-a list)
-                        (name ?slot)
-                        (contents slot 
-                                  ?name
-                                  $?facets))
-         =>
-         (unmake-instance ?f2)
-         (make-instance ?slot of deftemplate-single-slot
-                        (parent ?parent)
-                        (slot-name ?name)
-                        (facets ?facets)))
-
-(defrule translate-deftemplate:multislot
-         (stage (current parse))
-         ?f <- (object (is-a deftemplate)
-                       (slots $?a 
-                              ?slot
-                              $?b)
-                       (name ?parent))
-         ?f2 <- (object (is-a list)
-                        (name ?slot)
-                        (contents multislot 
-                                  ?name
-                                  $?facets))
-         =>
-         (unmake-instance ?f2)
-         (make-instance ?slot of deftemplate-multislot
-                        (parent ?parent)
-                        (slot-name ?name)
-                        (facets ?facets)))
