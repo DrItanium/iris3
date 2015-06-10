@@ -189,7 +189,7 @@
          =>
          (unmake-instance ?f2)
          (bind ?name (instance-name (make-instance ?last of defmethod-argument
-                                                   (argument-name ?last)
+                                                   (argument-name ?mname)
                                                    (parent ?args)
                                                    (types ?type ?types)
                                                    (query ?query))))
@@ -212,7 +212,7 @@
          (unmake-instance ?f2)
          (modify-instance ?f3 
                           (parent (instance-name (make-instance ?last of defmethod-argument
-                                                                (argument-name ?last)
+                                                                (argument-name ?mname)
                                                                 (parent ?args)
                                                                 (types ?type ?types))))))
 
@@ -233,7 +233,7 @@
          =>
          (unmake-instance ?f2)
          (bind ?name (instance-name (make-instance ?last of defmethod-argument
-                                                   (argument-name ?last)
+                                                   (argument-name ?mname)
                                                    (parent ?args)
                                                    (query ?query))))
          (modify-instance ?f3 (parent ?name))
@@ -243,7 +243,6 @@
 (defrule error:defmethod-argument:wildcard-parameter:nested-list:no-types-or-query
          (stage (current parse))
          (object (is-a defmethod-argument-list)
-                 (name ?args)
                  (contents $?before ?last)
                  (parent ?parent))
          (object (is-a list)
@@ -260,7 +259,6 @@
 (defrule error:defmethod-argument:wildcard-parameter:not-last-argument:bare
          (stage (current parse))
          (object (is-a defmethod-argument-list)
-                 (name ?args)
                  (contents $?before ?last ? $?)
                  (parent ?parent))
          (object (is-a multifield-variable)
@@ -271,13 +269,12 @@
 
          =>
          (printout werror "ERROR: only the last argument of a defmethod list can be a wildcard-parameter!" crlf
-                          tab "Offending method is: " ?name crlf)
+                   tab "Offending method is: " ?name crlf)
          (halt))
 
 (defrule error:defmethod-argument:wildcard-parameter:not-last-argument:nested-list
          (stage (current parse))
          (object (is-a defmethod-argument-list)
-                 (name ?args)
                  (contents $?before ?last ? $?)
                  (parent ?parent))
          (object (is-a list)
@@ -291,6 +288,71 @@
 
          =>
          (printout werror "ERROR: only the last argument of a defmethod list can be a wildcard-parameter!" crlf
-                          tab "Offending method is: " ?name crlf)
+                   tab "Offending method is: " ?name crlf)
          (halt))
 
+(defrule build:defmethod-argument:singlefield-argument:all
+         (stage (current parse))
+         (object (is-a defmethod-argument-list)
+                 (contents $? ?curr $?))
+         ?f <- (object (is-a list)
+                       (name ?curr)
+                       (parent ?parent)
+                       (contents ?mname
+                                 ?type&:(symbolp ?type)
+                                 $?types&:(all-symbolsp ?types)
+                                 ?query))
+         ?f2 <- (object (is-a singlefield-variable)
+                        (name ?mname))
+         ?f3 <- (object (is-a list|global-variable)
+                        (name ?query))
+         =>
+         (unmake-instance ?f)
+         (bind ?name (instance-name (make-instance ?curr of defmethod-argument
+                                                   (parent ?parent)
+                                                   (argument-name ?mname)
+                                                   (types ?type ?types)
+                                                   (query ?query))))
+         (modify-instance ?f2 (parent ?name))
+         (modify-instance ?f3 (parent ?name)))
+
+(defrule build:defmethod-argument:singlefield-argument:types-only
+         (stage (current parse))
+         (object (is-a defmethod-argument-list)
+                 (name ?args)
+                 (contents $? ?curr $?))
+         ?f <- (object (is-a list)
+                       (name ?curr)
+                       (contents ?mname
+                                 ?type&:(symbolp ?type)
+                                 $?types&:(all-symbolsp ?types)))
+         ?f2 <- (object (is-a singlefield-variable)
+                        (name ?mname))
+         =>
+         (unmake-instance ?f)
+         (bind ?name (instance-name (make-instance ?curr of defmethod-argument
+                                                   (parent ?args)
+                                                   (argument-name ?mname)
+                                                   (types ?type ?types))))
+         (modify-instance ?f2 (parent ?name)))
+(defrule build:defmethod-argument:singlefield-argument:query-only
+         (stage (current parse))
+         (object (is-a defmethod-argument-list)
+                 (name ?args)
+                 (contents $? ?curr $?))
+         ?f <- (object (is-a list)
+                       (name ?curr)
+                       (contents ?mname
+                                 ?query))
+         ?f2 <- (object (is-a singlefield-variable)
+                        (name ?mname))
+         ?f3 <- (object (is-a list|global-variable)
+                        (name ?query))
+         =>
+         (unmake-instance ?f)
+         (bind ?name (instance-name (make-instance ?curr of defmethod-argument
+                                                   (parent ?args)
+                                                   (argument-name ?mname)
+                                                   (query ?query))))
+         (modify-instance ?f2 (parent ?name))
+         (modify-instance ?f3 (parent ?name)))
