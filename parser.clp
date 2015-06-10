@@ -336,13 +336,6 @@
         (default ?NONE))
   (slot value
         (default ?NONE)))
-(defclass deftemplate
-  (is-a thing
-        has-comment)
-  (slot template-name
-        (type SYMBOL)
-        (default ?NONE))
-  (multislot slots))
 
 (defclass message-handler-documentation
   (is-a thing)
@@ -1836,72 +1829,3 @@
                           (facets ?a ?c)
                           (override-message ?override-message)))
 
-(defrule translate-deftemplate:comment
-         (stage (current parse))
-         ?f <- (object (is-a list)
-                       (contents deftemplate
-                                 ?template-name 
-                                 ?comment&:(stringp ?comment)
-                                 $?slots)
-                       (parent ?parent)
-                       (name ?name))
-         =>
-         (unmake-instance ?f)
-         (make-instance ?name of deftemplate
-          (template-name ?template-name)
-                        (comment ?comment)
-                        (parent ?parent)
-                        (slots $?slots)))
-
-(defrule translate-deftemplate:no-comment
-         (stage (current parse))
-         ?f <- (object (is-a list)
-                       (contents deftemplate
-                                 ?template-name 
-                                 $?slots&:(no-strings-in-list ?slots))
-                       (parent ?parent)
-                       (name ?name))
-         =>
-         (unmake-instance ?f)
-         (make-instance ?name of deftemplate
-          (template-name ?template-name)
-                        (parent ?parent)
-                        (slots $?slots)))
-
-(defrule translate-deftemplate:slot
-         (stage (current parse))
-         ?f <- (object (is-a deftemplate)
-                       (slots $?a 
-                              ?slot
-                              $?b)
-                       (name ?parent))
-         ?f2 <- (object (is-a list)
-                        (name ?slot)
-                        (contents slot 
-                                  ?name
-                                  $?facets))
-         =>
-         (unmake-instance ?f2)
-         (make-instance ?slot of deftemplate-single-slot
-                        (parent ?parent)
-                        (slot-name ?name)
-                        (facets ?facets)))
-
-(defrule translate-deftemplate:multislot
-         (stage (current parse))
-         ?f <- (object (is-a deftemplate)
-                       (slots $?a 
-                              ?slot
-                              $?b)
-                       (name ?parent))
-         ?f2 <- (object (is-a list)
-                        (name ?slot)
-                        (contents multislot 
-                                  ?name
-                                  $?facets))
-         =>
-         (unmake-instance ?f2)
-         (make-instance ?slot of deftemplate-multislot
-                        (parent ?parent)
-                        (slot-name ?name)
-                        (facets ?facets)))
