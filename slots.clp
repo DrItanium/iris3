@@ -210,7 +210,7 @@
   (role concrete)
   (pattern-match reactive))
 
-(defrule translate-defclass:convert-slot
+(defrule translate-defclass:slot
          (stage (current parse))
          ?f <- (object (is-a defclass)
                        (contents $?before 
@@ -229,7 +229,7 @@
                         (parent ?parent)
                         (facets ?rest)))
 
-(defrule translate-defclass:convert-multislot
+(defrule translate-defclass:multislot
          (stage (current parse))
          ?f <- (object (is-a defclass)
                        (contents $?before 
@@ -250,7 +250,7 @@
 
 (defrule translate-slot:type
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b))
@@ -268,7 +268,7 @@
 
 (defrule translate-slot:range
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b))
@@ -286,7 +286,7 @@
 
 (defrule translate-slot:cardinality
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b))
@@ -304,7 +304,7 @@
 
 (defrule translate-slot:allowed-symbols
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b))
@@ -322,7 +322,7 @@
 
 (defrule translate-slot:allowed-strings
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b))
@@ -340,7 +340,7 @@
 
 (defrule translate-slot:allowed-lexemes
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b))
@@ -358,7 +358,7 @@
 
 (defrule translate-slot:allowed-integers
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b))
@@ -376,7 +376,7 @@
 
 (defrule translate-slot:allowed-floats
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b))
@@ -394,7 +394,7 @@
 
 (defrule translate-slot:allowed-numbers
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b))
@@ -411,7 +411,7 @@
                                            $?rest)))
 (defrule translate-slot:allowed-instance-names
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b))
@@ -429,7 +429,7 @@
 
 (defrule translate-slot:allowed-classes
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b))
@@ -446,7 +446,7 @@
                                            $?rest)))
 (defrule translate-slot:allowed-values
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b))
@@ -464,7 +464,7 @@
 
 (defrule translate-slot:default:expression
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b)
@@ -486,7 +486,7 @@
 (defrule translate-slot:default:none-derive
          (declare (salience 1))
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b)
@@ -507,7 +507,7 @@
 
 (defrule translate-slot:default-dynamic:expression
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|deftemplate-single-slot|defclass-multislot|deftemplate-multislot)
+         ?f <- (object (is-a basic-slot)
                        (facets $?a
                                ?curr
                                $?b)
@@ -526,7 +526,7 @@
 
 (defrule translate-slot:defclass-slot:storage
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+         ?f <- (object (is-a defclass-slot)
                        (facets $?a
                                ?b
                                $?c))
@@ -542,7 +542,7 @@
 
 (defrule translate-slot:defclass-slot:access
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+         ?f <- (object (is-a defclass-slot)
                        (facets $?a
                                ?b
                                $?c))
@@ -558,7 +558,7 @@
 
 (defrule translate-slot:defclass-slot:propagation
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+         ?f <- (object (is-a defclass-slot)
                        (facets $?a
                                ?b
                                $?c))
@@ -574,7 +574,7 @@
 
 (defrule translate-slot:defclass-slot:source
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+         ?f <- (object (is-a defclass-slot)
                        (facets $?a
                                ?b
                                $?c))
@@ -590,7 +590,7 @@
 
 (defrule translate-slot:defclass-slot:pattern-match
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+         ?f <- (object (is-a defclass-slot)
                        (facets $?a
                                ?b
                                $?c))
@@ -605,7 +605,7 @@
                           (pattern-match ?pattern-match)))
 (defrule translate-slot:defclass-slot:visibility
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+         ?f <- (object (is-a defclass-slot)
                        (facets $?a
                                ?b
                                $?c))
@@ -621,7 +621,7 @@
 
 (defrule translate-slot:defclass-slot:create-accessor
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+         ?f <- (object (is-a defclass-slot)
                        (facets $?a
                                ?b
                                $?c))
@@ -636,7 +636,7 @@
                           (create-accessor ?create-accessor)))
 (defrule translate-slot:defclass-slot:override-message
          (stage (current parse))
-         ?f <- (object (is-a defclass-single-slot|defclass-multislot)
+         ?f <- (object (is-a defclass-slot)
                        (facets $?a
                                ?b
                                $?c))
