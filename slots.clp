@@ -494,7 +494,10 @@
          ?f2 <- (object (is-a list)
                         (name ?curr)
                         (contents default
-                                  ?c&"?NONE"|"?DERIVE"))
+                                  ?c))
+         ?f3 <- (object (is-a singlefield-variable)
+                        (name ?c)
+                        (value ?value&"?NONE"|"?DERIVE"))
          =>
          (unmake-instance ?f2)
          (make-instance ?curr of default

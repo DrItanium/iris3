@@ -8,3 +8,4 @@
 (batch* defglobal.clp)
 (batch* defmethod.clp)
 (batch* defmodule.clp)
+(batch* defmessage-handler.clp)
