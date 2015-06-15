@@ -76,7 +76,7 @@
                         (parent ?parent)
                         (salience ?s-value)
                         (auto-focus ?af-value)))
-                         
+
 (defrule capture-declarations:both:salience-second
          (declare (salience ?*priority:three*))
          (stage (current parse))
@@ -222,8 +222,8 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defrule
-          (rule-name ?rule-name)
-          (auto-focus ?auto-focus)
+                        (rule-name ?rule-name)
+                        (auto-focus ?auto-focus)
                         (salience ?salience)
                         (parent ?parent)
                         (matches ?matches)

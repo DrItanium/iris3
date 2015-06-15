@@ -176,13 +176,18 @@
                     (not (neq (upcase ?type)
                               LEXEME
                               SYMBOL)))
+(defmessage-handler OBJECT get-parent-chain primary
+                    "Returns the an empty multifield as this object has no parents!"
+                    ()
+                    (create$))
 (defclass thing
   (is-a USER)
   (slot parent 
         (type SYMBOL
               INSTANCE-NAME)
         (default ?NONE))
-  (message-handler part-of-a primary))
+  (message-handler part-of-a primary)
+  (message-handler get-parent-chain primary))
 (defmessage-handler thing part-of-a
                     "Checks to see if the current object or one of its parents are of a given type"
                     (?type)
@@ -192,6 +197,10 @@
                       else
                       (send ?self:parent 
                             part-of-a ?type)))
+(defmessage-handler thing get-parent-chain primary
+                    "Construct a chain of all the parents of this thing"
+                    ()
+                    (create$ ?self:parent (send ?self:parent get-parent-chain)))
 
 (defclass has-comment
   (is-a USER)
