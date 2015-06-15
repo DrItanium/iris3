@@ -170,12 +170,29 @@
              (multislot elements))
 (defgeneric construct-instance
             "constructs an instance of soemthing given a series of variables. Returns the instance name of the thing")
+(defmessage-handler SYMBOL part-of-a primary
+                    "returns FALSE unless the target type is SYMBOL"
+                    (?type)
+                    (not (neq (upcase ?type)
+                              LEXEME
+                              SYMBOL)))
 (defclass thing
   (is-a USER)
   (slot parent 
         (type SYMBOL
               INSTANCE-NAME)
-        (default ?NONE)))
+        (default ?NONE))
+  (message-handler part-of-a primary))
+(defmessage-handler thing part-of-a
+                    "Checks to see if the current object or one of its parents are of a given type"
+                    (?type)
+                    (if (eq (class ?self)
+                            ?type) then
+                      TRUE
+                      else
+                      (send ?self:parent 
+                            part-of-a ?type)))
+
 (defclass has-comment
   (is-a USER)
   (slot comment

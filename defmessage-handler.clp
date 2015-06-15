@@ -47,6 +47,15 @@
                    LEXEME
                    NUMBER)))
 
+(defclass defmessage-handler-parameters
+  (is-a thing)
+  (multislot arguments 
+             (type INSTANCE-NAME)
+             (allowed-classes singlefield-variable))
+  (slot wildcard-argument
+        (type INSTANCE-NAME)
+        (allowed-classes multifield-variable)))
+
 (deffunction valid-handlerp
              (?handler-type)
              (not (neq ?handler-type 
@@ -83,7 +92,7 @@
                         (parameters ?parameters)
                         (actions ?actions)))
 
- 
+
 (defrule convert-defmessage-handler:no-comment
          (stage (current parse))
          ?f <- (object (is-a list)
@@ -162,3 +171,102 @@
                         (message-name ?message-name)
                         (parameters ?parameters)
                         (actions ?actions)))
+(defrule convert-defmessage-handler-list:empty
+         (stage (current parse))
+         (object (is-a defmessage-handler)
+                 (parameters ?params))
+         ?f2 <- (object (is-a list)
+                        (name ?params)
+                        (parent ?parent)
+                        (contents))
+         =>
+         (unmake-instance ?f2)
+         (make-instance ?params of defmessage-handler-parameters
+                        (parent ?parent)))
+
+(deffunction strip-singlefield
+             (?element)
+             (if (and (instance-namep ?element)
+                      (eq (class ?element)
+                          singlefield-variable)) then 
+               ?element 
+               else 
+               (create$)))
+
+(deffunction only-single-fields
+             (?list)
+             (= (length$ ?list)
+                (length$ (apply$ strip-singlefield
+                                 ?list))))
+(deffunction wildcardp
+             (?element)
+             (and (instance-namep ?element)
+                  (eq (class ?element)
+                      multifield-variable)))
+
+(deffunction has-wildcard-parameter
+             (?list)
+             (exists$ wildcardp
+                      ?list))
+
+(defrule convert-defmessage-handler-list:single-and-wildcard
+         (stage (current parse))
+         (object (is-a defmessage-handler)
+                 (parameters ?params))
+         ?f2 <- (object (is-a list)
+                        (name ?params)
+                        (parent ?parent)
+                        (contents $?sf&:(only-single-fields ?sf)
+                                  ?wc))
+         (object (is-a multifield-variable)
+                 (name ?wc))
+         =>
+         (unmake-instance ?f2)
+         (make-instance ?params of defmessage-handler-parameters
+                        (parent ?parent)
+                        (arguments ?sf)
+                        (wildcard-argument ?wc)))
+
+(defrule convert-defmessage-handler-list:single-only
+         (stage (current parse))
+         (object (is-a defmessage-handler)
+                 (parameters ?params))
+         ?f2 <- (object (is-a list)
+                        (name ?params)
+                        (parent ?parent)
+                        (contents $?sf&:(only-single-fields ?sf)))
+         (object (is-a multifield-variable)
+                 (name ?wc))
+         =>
+         (unmake-instance ?f2)
+         (make-instance ?params of defmessage-handler-parameters
+                        (parent ?parent)
+                        (arguments ?sf)))
+
+(defrule error:convert-defmessage-handler-list:multiple-wildcards
+         (stage (current parse))
+         (object (is-a defmessage-handler)
+                 (parameters ?params))
+         (object (is-a list)
+                 (name ?params)
+                 (contents $?sf&:(not (only-single-fields ?sf))
+                           ?wc))
+         (object (is-a multifield-variable)
+                 (name ?wc))
+         =>
+         (printout werror "ERROR: extra wildcard defined in defmessage-handler parameter list" crlf)
+         (halt))
+
+(defrule error:convert-defmessage-handler-list:out-of-order-wildcard
+         (stage (current parse))
+         (object (is-a defmessage-handler)
+                 (parameters ?params))
+         (object (is-a list)
+                 (name ?params)
+                 (contents $?sf&:(has-wildcard-parameter ?sf)
+                           ?sf0))
+         (object (is-a singlefield-variable)
+                 (name ?sf0))
+         =>
+         (printout werror "ERROR: wildcard is not defined as the last argument in a defmessage-handler list" crlf)
+         (halt))
