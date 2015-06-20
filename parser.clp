@@ -121,14 +121,21 @@
         (source composite)
         (storage local)))
 (defclass global-variable (is-a scalar-thing))
-(defclass multifield-global-variable (is-a scalar-thing))
-(defclass multifield-variable (is-a scalar-thing))
-(defclass singlefield-variable (is-a scalar-thing))
-(defclass not-constraint (is-a scalar-thing))
-(defclass and-constraint (is-a scalar-thing))
-(defclass or-constraint (is-a scalar-thing))
-(defclass multifield-wildcard (is-a scalar-thing))
-(defclass singlefield-wildcard (is-a scalar-thing))
+(defclass singlefield-global-variable (is-a global-variable))
+(defclass multifield-global-variable (is-a global-variable))
+
+(defclass local-variable (is-a scalar-thing))
+(defclass multifield-variable (is-a local-variable))
+(defclass singlefield-variable (is-a local-variable))
+
+(defclass constraint (is-a scalar-thing))
+(defclass not-constraint (is-a constraint))
+(defclass and-constraint (is-a constraint))
+(defclass or-constraint (is-a constraint))
+
+(defclass wildcard (is-a scalar-thing))
+(defclass multifield-wildcard (is-a wildcard))
+(defclass singlefield-wildcard (is-a wildcard))
 
 (defmethod construct-instance
   ((?class SYMBOL (eq ?class OR_CONSTRAINT))
@@ -183,7 +190,7 @@
    (?parent SYMBOL
             INSTANCE-NAME)
    (?value LEXEME))
-  (construct-instance global-variable ?parent ?value))
+  (construct-instance singlefield-global-variable ?parent ?value))
 
 
 (defclass list
