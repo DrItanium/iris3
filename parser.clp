@@ -198,6 +198,13 @@
   (is-a thing)
   (multislot contents))
 
+(defclass reference
+  "An indirect reference to something else, useful for deffunctions and arguments"
+  (is-a scalar-thing)
+  (slot expand
+        (type SYMBOL)
+        (allowed-symbols FALSE TRUE)))
+;------------------------------------------------------------------------------
 (defrule open-file
          (stage (current load))
          ?f <- (open ?path)

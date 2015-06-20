@@ -36,4 +36,5 @@
           (stage (current load)
                  (rest lex
                        parse
+                       associate
                        optimize)))

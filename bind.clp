@@ -42,3 +42,32 @@
                         (parent ?parent)
                         (variable ?var)
                         (value ?value)))
+
+; association rules
+(defrule register-local-binds 
+         "take ownership of the local bound variables found in the current function"
+         (declare (salience ?*priority:two*))
+         (stage (current associate))
+         ?bind <- (object (is-a bind)
+                          (variable ?var)
+                          (name ?bind-name))
+         ?v <- (object (is-a local-variable)
+                       (name ?var))
+         ?func <- (object (is-a function)
+                          (name ?function)
+                          (local-binds $?lb)
+                          (arguments $?args))
+         (test (and (not (neq ?function 
+                              (send ?bind get-parent-chain)))
+                    (neq ?var $?lb)
+                    (neq ?var $?args)))
+         =>
+         ; now we need to take ownership of the variable in the bind since we didn't find it 
+         ; in the local binds nor the arguments
+         (bind ?ref (instance-name (make-instance of reference
+                                                 (parent ?bind-name)
+                                                 (value ?var))))
+         (modify-instance ?v (parent ?function))
+         (modify-instance ?bind (variable ?ref))
+         (modify-instance ?func (local-binds $?lb ?var)))
+

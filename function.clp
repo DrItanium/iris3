@@ -140,8 +140,7 @@
                         (function-name ?message-name)
                         (handler-type ?handler-type)
                         (arguments ?params)
-                        (body ?actions)
-                        (actions ?actions)))
+                        (body ?actions)))
 
 
 (defrule convert-defmessage-handler:no-comment
@@ -281,4 +280,70 @@
          (printout werror "ERROR: wildcard parameter is not defined as the last argument in " (class ?q) " " ?function crlf)
          (halt))
 
-; association rules
+(defrule reference-function-arguments
+         (declare (salience ?*priority:three*)) ; has to go before the bind operations
+         (stage (current associate))
+         (object (is-a function)
+                 (arguments $? ?arg $?)
+                 (name ?function))
+         (object (name ?arg)
+                 (is-a singlefield-variable)
+                 (value ?cvalue))
+         ?f <- (object (is-a singlefield-variable)
+                       (value ?cvalue)
+                       (name ?targ&~?arg)
+                       (parent ?parent))
+         (test (not (neq ?function 
+                         (expand$ (send ?f get-parent-chain)))))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?targ of reference
+                        (parent ?parent)
+                        (value ?arg)))
+
+(defrule reference-function-arguments:last:multifield:exact
+         (declare (salience ?*priority:three*))
+         (stage (current associate))
+         (object (is-a function)
+                 (arguments $? ?last)
+                 (name ?function))
+         (object (is-a multifield-variable)
+                 (name ?last)
+                 (value ?cvalue))
+         ?f <- (object (is-a multifield-variable)
+                       (value ?cvalue)
+                       (name ?name&~?last)
+                       (parent ?parent))
+         (test (not (neq ?function
+                         (expand$ (send ?f get-parent-chain)))))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?name of reference
+                        (parent ?parent)
+                        (value ?last)
+                        (expand TRUE)))
+
+(defrule reference-function-arguments:last:multifield:mismatch
+         (declare (salience ?*priority:three*))
+         (stage (current associate))
+         (object (is-a function)
+                 (arguments $? ?last)
+                 (name ?function))
+         (object (is-a multifield-variable)
+                 (name ?last)
+                 (value ?cvalue))
+         ?f <- (object (is-a singlefield-variable)
+                       (value ?qvalue&:(eq ?cvalue
+                                           (format nil "$%s" ?qvalue)))
+                       (name ?name)
+                       (parent ?parent))
+         (test (not (neq ?function
+                         (expand$ (send ?f get-parent-chain)))))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?name of reference
+                        (parent ?parent)
+                        (value ?last)
+                        (expand TRUE)))
+
+
