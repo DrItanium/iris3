@@ -1,3 +1,5 @@
+(batch* lib.clp)
+(batch* stages.clp)
 (batch* parser.clp)
 (batch* defrule.clp)
 (batch* defclass.clp)
