@@ -43,6 +43,8 @@
                        (contents $?a))
          =>
          (unmake-instance ?j ?f ?k)
+         (progn$ (?ag ?a) 
+                 (send ?ag put-parent ?name))
          (make-instance ?name of deffunction
                         (function-name ?func-name)
                         (parent ?parent)
@@ -58,12 +60,13 @@
                                  $?body)
                        (parent ?parent)
                        (name ?name))
-
          ?j <- (object (is-a list)
                        (name ?args)
                        (contents $?a))
          =>
          (unmake-instance ?j ?f)
+         (progn$ (?ag ?a) 
+                 (send ?ag put-parent ?name))
          (make-instance ?name of deffunction
                         (function-name ?func-name)
                         (parent ?parent)
