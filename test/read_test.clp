@@ -1,0 +1,12 @@
+(deffacts files
+          (open parser.clp)
+          (open defrule.clp)
+          (open defclass.clp)
+          (open deftemplate.clp)
+          (open slots.clp)
+          (open deffunction.clp)
+          (open defgeneric.clp)
+          (open defglobal.clp)
+          (open defmethod.clp)
+          (open defmodule.clp)
+          (open defmessage-handler.clp))
