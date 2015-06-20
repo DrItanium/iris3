@@ -82,3 +82,201 @@
                         (body ?body)))
 
 
+(defglobal MAIN
+           ?*handler-types* = (create$ primary 
+                                       around
+                                       before
+                                       after))
+(deffunction valid-handlerp
+             (?handler-type)
+             (not (neq ?handler-type 
+                       $?*handler-types*)))
+
+(defclass defmessage-handler
+  "A wrapper for a defmessage-handler declaration"
+  (is-a function)
+  (slot target-class
+        (type SYMBOL
+              INSTANCE-NAME)
+        (visibility public)
+        (default ?NONE))
+  (slot handler-type
+        (type SYMBOL)
+        (allowed-symbols primary
+                         around
+                         before
+                         after)))
+
+
+(defrule convert-defmessage-handler:all
+         (stage (current parse))
+         ?f <- (object (is-a list)
+                       (contents defmessage-handler
+                                 ?class-name&:(symbolp ?class-name)
+                                 ?message-name&:(symbolp ?message-name)
+                                 ?handler-type&:(valid-handlerp ?handler-type)
+                                 ?comment
+                                 ?parameters
+                                 $?actions)
+                       (name ?id)
+                       (parent ?parent))
+         (object (is-a defclass)
+                 (class-name ?class-name)
+                 (name ?class-id))
+         ?f2 <- (object (is-a string)
+                        (name ?comment)
+                        (value ?cvalue))
+         ?f3 <- (object (is-a list)
+                        (name ?parameters)
+                        (contents $?params))
+         =>
+         (unmake-instance ?f ?f2 ?f3)
+         (progn$ (?p ?params)
+                 (send ?p put-parent ?id))
+         (make-instance ?id of defmessage-handler
+                        (parent ?parent)
+                        (comment ?cvalue)
+                        (target-class ?class-id)
+                        (function-name ?message-name)
+                        (handler-type ?handler-type)
+                        (arguments ?params)
+                        (body ?actions)
+                        (actions ?actions)))
+
+
+(defrule convert-defmessage-handler:no-comment
+         (stage (current parse))
+         ?f <- (object (is-a list)
+                       (contents defmessage-handler
+                                 ?class-name&:(symbolp ?class-name)
+                                 ?message-name&:(symbolp ?message-name)
+                                 ?handler-type&:(valid-handlerp ?handler-type)
+                                 ?parameters
+                                 $?actions)
+                       (name ?id)
+                       (parent ?parent))
+         (object (is-a defclass)
+                 (class-name ?class-name)
+                 (name ?class-id))
+         ?f3 <- (object (is-a list)
+                        (name ?parameters)
+                        (contents $?params))
+         =>
+         (unmake-instance ?f ?f3)
+         (progn$ (?p ?params)
+                 (send ?p put-parent ?id))
+         (make-instance ?id of defmessage-handler
+                        (parent ?parent)
+                        (target-class ?class-id)
+                        (function-name ?message-name)
+                        (handler-type ?handler-type)
+                        (arguments ?params)
+                        (body ?actions)))
+
+(defrule convert-defmessage-handler:no-handler
+         (stage (current parse))
+         ?f <- (object (is-a list)
+                       (contents defmessage-handler
+                                 ?class-name&:(symbolp ?class-name)
+                                 ?message-name&:(symbolp ?message-name)
+                                 ?comment
+                                 ?parameters
+                                 $?actions)
+                       (name ?id)
+                       (parent ?parent))
+         (object (is-a defclass)
+                 (class-name ?class-name)
+                 (name ?class-id))
+         ?f2 <- (object (is-a string)
+                        (name ?comment)
+                        (value ?cvalue))
+         ?f3 <- (object (is-a list)
+                        (name ?parameters)
+                        (contents $?params))
+         =>
+         (unmake-instance ?f ?f2 ?f3)
+         (progn$ (?p ?params)
+                 (send ?p put-parent ?id))
+         (make-instance ?id of defmessage-handler
+                        (parent ?parent)
+                        (comment ?cvalue)
+                        (target-class ?class-id)
+                        (function-name ?message-name)
+                        (arguments ?params)
+                        (body ?actions)))
+
+(defrule convert-defmessage-handler:no-handler-or-comment
+         (stage (current parse))
+         ?f <- (object (is-a list)
+                       (contents defmessage-handler
+                                 ?class-name&:(symbolp ?class-name)
+                                 ?message-name&:(symbolp ?message-name)
+                                 ?parameters
+                                 $?actions)
+                       (name ?id)
+                       (parent ?parent))
+         (object (is-a defclass)
+                 (class-name ?class-name)
+                 (name ?class-id))
+         ?f3 <- (object (is-a list)
+                        (name ?parameters)
+                        (contents $?params))
+         =>
+         (unmake-instance ?f ?f3)
+         (progn$ (?p ?params)
+                 (send ?p put-parent ?id))
+         (make-instance ?id of defmessage-handler
+                        (parent ?parent)
+                        (target-class ?class-id)
+                        (message-name ?message-name)
+                        (arguments ?params)
+                        (body ?actions)))
+
+(deffunction strip-singlefield
+             (?element)
+             (if (and (instance-namep ?element)
+                      (eq (class ?element)
+                          singlefield-variable)) then 
+               ?element 
+               else 
+               (create$)))
+
+(deffunction only-single-fields
+             (?list)
+             (= (length$ ?list)
+                (length$ (apply$ strip-singlefield
+                                 ?list))))
+(deffunction wildcardp
+             (?element)
+             (and (instance-namep ?element)
+                  (eq (class ?element)
+                      multifield-variable)))
+
+(deffunction has-wildcard-parameter
+             (?list)
+             (exists$ wildcardp
+                      ?list))
+
+(defrule error:convert-function-arguments:multiple-wildcards
+         (stage (current parse))
+         ?q <- (object (is-a function)
+                       (arguments $?sfs&:(not (only-single-fields ?sfs))
+                                  ?wc)
+                       (function-name ?function))
+         (object (is-a multifield-variable)
+                 (name ?wc))
+         =>
+         (printout werror "ERROR: extra wildcard defined in argument list of " (class ?q) " " ?function crlf)
+         (halt))
+
+(defrule error:convert-function-arguments:out-of-order-wildcard
+         (stage (current parse))
+         ?q <- (object (is-a function)
+                       (arguments $?sf&:(has-wildcard-parameter ?sf)
+                                  ?sf0)
+                       (function-name ?function))
+         (object (is-a singlefield-variable)
+                 (name ?sf0))
+         =>
+         (printout werror "ERROR: wildcard parameter is not defined as the last argument in " (class ?q) " " ?function crlf)
+         (halt))

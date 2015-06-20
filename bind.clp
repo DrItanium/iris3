@@ -22,7 +22,6 @@
   (is-a thing)
   (slot variable
         (type INSTANCE)
-        (allowed-classes variable)
         (default ?NONE))
   (slot value
         (default ?NONE)))

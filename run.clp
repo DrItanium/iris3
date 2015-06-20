@@ -5,7 +5,7 @@
 (batch* defclass.clp)
 (batch* deftemplate.clp)
 (batch* slots.clp)
-(batch* deffunction.clp)
+(batch* function.clp)
 (batch* defgeneric.clp)
 (batch* defglobal.clp)
 (batch* defmethod.clp)

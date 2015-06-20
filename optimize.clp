@@ -24,6 +24,7 @@
         (allowed-symbols FALSE TRUE)))
 
 (defrule reference-deffunction-arguments
+         (declare (salience ?*priority:three*)) ; has to go before the bind operations
          (stage (current optimize))
          (object (is-a deffunction)
                  (arguments $? ?arg $?)
@@ -44,6 +45,7 @@
                         (value ?arg)))
 
 (defrule reference-deffunction-arguments:last:multifield:exact
+         (declare (salience ?*priority:three*))
          (stage (current optimize))
          (object (is-a deffunction)
                  (arguments $? ?last)
@@ -65,6 +67,7 @@
                         (expand TRUE)))
 
 (defrule reference-deffunction-arguments:last:multifield:mismatch
+         (declare (salience ?*priority:three*))
          (stage (current optimize))
          (object (is-a deffunction)
                  (arguments $? ?last)
@@ -88,6 +91,7 @@
 
 
 (defrule reference-global-variables:singlefield:exact
+         (declare (salience ?*priority:three*))
          "Associate global variables even if they aren't of the exact same type"
          (stage (current optimize))
          (object (is-a defglobal)
@@ -109,6 +113,7 @@
                         (parent ?p)))
 
 (defrule reference-global-variables:singlefield:mismatch
+         (declare (salience ?*priority:three*))
          "Associate global variables even if they aren't of the exact same type"
          (stage (current optimize))
          (object (is-a defglobal)
@@ -131,6 +136,7 @@
                         (parent ?p)))
 
 (defrule reference-global-variables:multifield:exact-match
+         (declare (salience ?*priority:three*))
          "Associate multifield global variables"
          (stage (current optimize))
          (object (is-a defglobal)
@@ -153,6 +159,7 @@
                         (expand TRUE)))
 
 (defrule reference-global-variables:multifield:mismatch
+         (declare (salience ?*priority:three*))
          "Associate multifield global variables"
          (stage (current optimize))
          (object (is-a defglobal)
@@ -174,4 +181,26 @@
                         (value ?var)
                         (parent ?p)
                         (expand TRUE)))
-         
+
+
+(defrule register-local-binds 
+         "take ownership of the local bound variables found in the current function"
+         (stage (current optimize))
+         ?bind <- (object (is-a bind)
+                          (variable ?var)
+                          (name ?bind-name))
+         ?v <- (object (is-a variable)
+                       (name ?var))
+         ?func <- (object (is-a deffunction)
+                          (name ?function)
+                          (local-binds $?lb)
+                          (arguments $?args))
+         (test (and (not (neq ?function 
+                              (send ?bind get-parent-chain)))
+                    (neq ?var $?lb)
+                    (neq ?var $?args)))
+         =>
+         ; now we need to take ownership of the variable in the bind since we didn't find it 
+         ; in the local binds nor the arguments
+         (bind ?ref (instance-name (make-instance of 
+
