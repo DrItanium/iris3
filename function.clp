@@ -16,14 +16,22 @@
 ;    misrepresented as being the original software.
 ; 3. This notice may not be removed or altered from any source distribution.
 
-(defclass deffunction
+(defclass function
   (is-a thing
         has-comment)
   (slot function-name
+        (visibility public)
         (type SYMBOL)
         (default ?NONE))
-  (multislot arguments)
-  (multislot body))
+  (multislot arguments
+             (visibility public))
+  (multislot local-binds
+             (visibility public))
+  (multislot body
+             (visibility public)))
+
+(defclass deffunction
+  (is-a function))
 
 (defrule translate-deffunction:comment
          (stage (current parse))
