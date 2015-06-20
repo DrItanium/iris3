@@ -24,7 +24,8 @@
 (defclass defglobal-assignment
   (is-a thing)
   (slot variable 
-        (type STRING)
+        (type INSTANCE)
+        (allowed-classes variable)
         (default ?NONE))
   (slot value
         (default ?NONE)))
@@ -65,7 +66,7 @@
                                     ?var =(equals-sign) ?value
                                     $?rest)
                        (name ?parent))
-         ?f2 <- (object (is-a global-variable|multifield-global-variable)
+         ?f2 <- (object (is-a global-variable)
                         (name ?var)
                         (parent ?parent))
          ?f3 <- (object (is-a thing)
@@ -93,7 +94,7 @@
                                     ?var =(equals-sign) ?value&:(not (instance-namep ?value))
                                     $?rest)
                        (name ?parent))
-         ?f2 <- (object (is-a global-variable|multifield-global-variable)
+         ?f2 <- (object (is-a global-variable)
                         (name ?var)
                         (parent ?parent))
          =>

@@ -120,11 +120,12 @@
         (type STRING)
         (source composite)
         (storage local)))
-(defclass global-variable (is-a scalar-thing))
+(defclass variable (is-a scalar-thing))
+(defclass global-variable (is-a variable))
 (defclass singlefield-global-variable (is-a global-variable))
 (defclass multifield-global-variable (is-a global-variable))
 
-(defclass local-variable (is-a scalar-thing))
+(defclass local-variable (is-a variable))
 (defclass multifield-variable (is-a local-variable))
 (defclass singlefield-variable (is-a local-variable))
 
