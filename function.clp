@@ -280,3 +280,5 @@
          =>
          (printout werror "ERROR: wildcard parameter is not defined as the last argument in " (class ?q) " " ?function crlf)
          (halt))
+
+; association rules
