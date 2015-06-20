@@ -16,13 +16,6 @@
 ;    misrepresented as being the original software.
 ; 3. This notice may not be removed or altered from any source distribution.
 
-(defclass iris3-operation
-  (is-a thing)
-  (slot operation)
-  (slot destination)
-  (slot source0)
-  (slot source1))
-
 (defclass reference
   "An indirect reference to something else, useful for deffunctions and arguments"
   (is-a scalar-thing)
@@ -34,25 +27,67 @@
          (stage (current optimize))
          (object (is-a deffunction)
                  (arguments $? ?arg $?)
-                 (name ?parent))
+                 (name ?function))
          (object (name ?arg)
-                 (is-a ?ctype)
+                 (is-a singlefield-variable)
                  (value ?cvalue))
-         ?f <- (object (is-a ?ctype)
+         ?f <- (object (is-a singlefield-variable)
                        (value ?cvalue)
                        (name ?targ&~?arg)
-                       (parent ?p))
-         (test (not (neq ?parent 
+                       (parent ?parent))
+         (test (not (neq ?function 
                          (expand$ (send ?f get-parent-chain)))))
          =>
-         (printout t (send ?f get-parent-chain) crlf)
          (unmake-instance ?f)
          (make-instance ?targ of reference
-                        (parent ?p)
+                        (parent ?parent)
                         (value ?arg)))
 
+(defrule reference-deffunction-arguments:last:multifield:exact
+         (stage (current optimize))
+         (object (is-a deffunction)
+                 (arguments $? ?last)
+                 (name ?function))
+         (object (is-a multifield-variable)
+                 (name ?last)
+                 (value ?cvalue))
+         ?f <- (object (is-a multifield-variable)
+                       (value ?cvalue)
+                       (name ?name&~?last)
+                       (parent ?parent))
+         (test (not (neq ?function
+                         (expand$ (send ?f get-parent-chain)))))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?name of reference
+                        (parent ?parent)
+                        (value ?last)
+                        (expand TRUE)))
 
-(defrule reference-global-variables:single-field:exact
+(defrule reference-deffunction-arguments:last:multifield:mismatch
+         (stage (current optimize))
+         (object (is-a deffunction)
+                 (arguments $? ?last)
+                 (name ?function))
+         (object (is-a multifield-variable)
+                 (name ?last)
+                 (value ?cvalue))
+         ?f <- (object (is-a singlefield-variable)
+                       (value ?qvalue&:(eq ?cvalue
+                                           (format nil "$%s" ?qvalue)))
+                       (name ?name)
+                       (parent ?parent))
+         (test (not (neq ?function
+                         (expand$ (send ?f get-parent-chain)))))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?name of reference
+                        (parent ?parent)
+                        (value ?last)
+                        (expand TRUE)))
+
+
+(defrule reference-global-variables:singlefield:exact
          "Associate global variables even if they aren't of the exact same type"
          (stage (current optimize))
          (object (is-a defglobal)
@@ -73,7 +108,7 @@
                         (value ?var)
                         (parent ?p)))
 
-(defrule reference-global-variables:single-field:mismatch
+(defrule reference-global-variables:singlefield:mismatch
          "Associate global variables even if they aren't of the exact same type"
          (stage (current optimize))
          (object (is-a defglobal)
@@ -95,7 +130,7 @@
                         (value ?var)
                         (parent ?p)))
 
-(defrule reference-global-variables:multi-field:exact-match
+(defrule reference-global-variables:multifield:exact-match
          "Associate multifield global variables"
          (stage (current optimize))
          (object (is-a defglobal)
@@ -117,7 +152,7 @@
                         (parent ?p)
                         (expand TRUE)))
 
-(defrule reference-global-variables:multi-field:mismatch
+(defrule reference-global-variables:multifield:mismatch
          "Associate multifield global variables"
          (stage (current optimize))
          (object (is-a defglobal)
