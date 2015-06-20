@@ -11,3 +11,4 @@
 (batch* defmethod.clp)
 (batch* defmodule.clp)
 (batch* defmessage-handler.clp)
+(batch* bind.clp)

@@ -9,4 +9,5 @@
           (open defglobal.clp)
           (open defmethod.clp)
           (open defmodule.clp)
-          (open defmessage-handler.clp))
+          (open defmessage-handler.clp)
+          (open bind.clp))
