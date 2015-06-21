@@ -346,4 +346,91 @@
                         (value ?last)
                         (expand TRUE)))
 
+(defrule reference-function-local-binds:singlefield:exact
+         (declare (salience ?*priority:three*)) ; has to go before the bind operations
+         (stage (current associate))
+         (object (is-a function)
+                 (local-binds $? ?arg $?)
+                 (name ?function))
+         (object (name ?arg)
+                 (is-a singlefield-variable)
+                 (value ?cvalue))
+         ?f <- (object (is-a singlefield-variable)
+                       (value ?cvalue)
+                       (name ?targ&~?arg)
+                       (parent ?parent))
+         (test (not (neq ?function 
+                         (expand$ (send ?f get-parent-chain)))))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?targ of reference
+                        (parent ?parent)
+                        (value ?arg)))
+
+(defrule reference-function-local-binds:singlefield:mismatch
+         (declare (salience ?*priority:three*)) ; has to go before the bind operations
+         (stage (current associate))
+         (object (is-a function)
+                 (local-binds $? ?arg $?)
+                 (name ?function))
+         (object (name ?arg)
+                 (is-a singlefield-variable)
+                 (value ?cvalue))
+         ?f <- (object (is-a multifield-variable)
+                       (value ?mfvalue&:(eq ?mfvalue 
+                                            (format nil "$%s" ?cvalue)))
+                       (name ?targ&~?arg)
+                       (parent ?parent))
+         (test (not (neq ?function 
+                         (expand$ (send ?f get-parent-chain)))))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?targ of reference
+                        (parent ?parent)
+                        (value ?arg)))
+
+(defrule reference-function-local-binds:last:multifield:exact
+         (declare (salience ?*priority:three*))
+         (stage (current associate))
+         (object (is-a function)
+                 (local-binds $? ?last $?)
+                 (name ?function))
+         (object (is-a multifield-variable)
+                 (name ?last)
+                 (value ?cvalue))
+         ?f <- (object (is-a multifield-variable)
+                       (value ?cvalue)
+                       (name ?name&~?last)
+                       (parent ?parent))
+         (test (not (neq ?function
+                         (expand$ (send ?f get-parent-chain)))))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?name of reference
+                        (parent ?parent)
+                        (value ?last)
+                        (expand TRUE)))
+
+(defrule reference-function-local-binds:multifield:mismatch
+         (declare (salience ?*priority:three*))
+         (stage (current associate))
+         (object (is-a function)
+                 (local-binds $? ?last $?)
+                 (name ?function))
+         (object (is-a multifield-variable)
+                 (name ?last)
+                 (value ?cvalue))
+         ?f <- (object (is-a singlefield-variable)
+                       (value ?qvalue&:(eq ?cvalue
+                                           (format nil "$%s" ?qvalue)))
+                       (name ?name)
+                       (parent ?parent))
+         (test (not (neq ?function
+                         (expand$ (send ?f get-parent-chain)))))
+         =>
+         (unmake-instance ?f)
+         (make-instance ?name of reference
+                        (parent ?parent)
+                        (value ?last)
+                        (expand TRUE)))
 

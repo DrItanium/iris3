@@ -70,4 +70,3 @@
          (modify-instance ?v (parent ?function))
          (modify-instance ?bind (variable ?ref))
          (modify-instance ?func (local-binds $?lb ?var)))
-
