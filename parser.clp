@@ -85,21 +85,21 @@
                     (create$ ?self:parent (send ?self:parent get-parent-chain)))
 
 (defclass has-comment
-  (is-a thing)
+  (is-a USER)
   (slot comment
         (type STRING)))
 (defclass has-local-binds
-  (is-a thing)
+  (is-a USER)
   (multislot local-binds
              (visibility public)))
 
 (defclass has-arguments
-  (is-a thing)
+  (is-a USER)
   (multislot arguments
              (visibility public)))
 
 (defclass has-body
-  (is-a thing)
+  (is-a USER)
   (multislot body
              (visibility public)))
 
