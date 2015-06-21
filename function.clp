@@ -19,6 +19,7 @@
 (defclass function
   (is-a thing
         has-comment)
+        
   (slot function-name
         (visibility public)
         (type SYMBOL)

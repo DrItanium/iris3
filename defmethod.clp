@@ -16,22 +16,10 @@
 ;    misrepresented as being the original software.
 ; 3. This notice may not be removed or altered from any source distribution.
 (defclass defmethod
-  (is-a thing
-        has-comment)
-  (slot method-name
-        (type SYMBOL)
-        (default ?NONE))
+  (is-a function)
   (slot index 
         (type INTEGER)
-        (default-dynamic -1))
-  (slot args
-        (type INSTANCE-NAME)
-        (allowed-classes list)
-        (default ?NONE))
-  (multislot body))
-(defclass defmethod-argument-list
-  (is-a composite-thing))
-
+        (default-dynamic -1)))
 
 (defrule build:defmethod:index:comment
          (stage (current parse))
@@ -54,15 +42,14 @@
                         (contents $?contents))
          =>
          (unmake-instance ?f ?f2 ?f3)
-         (make-instance ?args of defmethod-argument-list
-                        (parent ?aparent)
-                        (contents ?contents))
+         (progn$ (?a ?contents) 
+                 (send ?a put-parent ?id))
          (make-instance ?id of defmethod
                         (parent ?parent)
-                        (method-name ?name)
+                        (function-name ?name)
                         (index ?index)
                         (comment ?cvalue)
-                        (args ?args)
+                        (arguments ?contents)
                         (body ?body)))
 (defrule build:defmethod:index:no-comment
          (stage (current parse))
@@ -81,14 +68,13 @@
                         (contents $?contents))
          =>
          (unmake-instance ?f ?f2)
-         (make-instance ?args of defmethod-argument-list
-                        (parent ?aparent)
-                        (contents ?contents))
+         (progn$ (?a ?contents) 
+                 (send ?a put-parent ?id))
          (make-instance ?id of defmethod
                         (parent ?parent)
-                        (method-name ?name)
+                        (function-name ?name)
                         (index ?index)
-                        (args ?args)
+                        (arguments ?contents)
                         (body ?body)))
 
 (defrule build:defmethod:no-index:comment
@@ -110,14 +96,13 @@
                         (contents $?contents))
          =>
          (unmake-instance ?f ?f2 ?f3)
-         (make-instance ?args of defmethod-argument-list
-                        (parent ?aparent)
-                        (contents $?contents))
+         (progn$ (?a ?contents) 
+                 (send ?a put-parent ?id))
          (make-instance ?id of defmethod
                         (parent ?parent)
-                        (method-name ?name)
+                        (function-name ?name)
                         (comment ?cvalue)
-                        (args ?args)
+                        (arguments ?contents)
                         (body ?body)))
 
 (defrule build:defmethod:no-index:no-comment
@@ -135,13 +120,12 @@
                         (contents $?contents))
          =>
          (unmake-instance ?f ?f2)
-         (make-instance ?args of defmethod-argument-list
-                        (parent ?aparent)
-                        (contents $?contents))
+         (progn$ (?a ?contents) 
+                 (send ?a put-parent ?id))
          (make-instance ?id of defmethod
                         (parent ?parent)
                         (method-name ?name)
-                        (args ?args)
+                        (arguments ?args)
                         (body ?body)))
 
 (defclass defmethod-argument
@@ -173,9 +157,9 @@
 ; we leave the bare ? and $? options alone as it make reconstruction easier
 (defrule build:defmethod-argument:wildcard-parameter:nested-list:types-and-query
          (stage (current parse))
-         (object (is-a defmethod-argument-list)
+         (object (is-a defmethod)
                  (name ?args)
-                 (contents $?before ?last))
+                 (arguments $?before ?last))
          ?f2 <- (object (is-a list)
                         (name ?last)
                         (contents ?mname
@@ -198,9 +182,9 @@
 
 (defrule build:defmethod-argument:wildcard-parameter:nested-list:types-only
          (stage (current parse))
-         (object (is-a defmethod-argument-list)
+         (object (is-a defmethod)
                  (name ?args)
-                 (contents $?before ?last))
+                 (arguments $?before ?last))
          ?f2 <- (object (is-a list)
                         (name ?last)
                         (contents ?mname
@@ -219,9 +203,9 @@
 
 (defrule build:defmethod-argument:wildcard-parameter:nested-list:query
          (stage (current parse))
-         (object (is-a defmethod-argument-list)
+         (object (is-a defmethod)
                  (name ?args)
-                 (contents $?before ?last))
+                 (arguments $?before ?last))
          ?f2 <- (object (is-a list)
                         (name ?last)
                         (contents ?mname
@@ -240,61 +224,61 @@
          (modify-instance ?f4 (parent ?name)))
 
 ; Error states
-(defrule error:defmethod-argument:wildcard-parameter:nested-list:no-types-or-query
-         (stage (current parse))
-         (object (is-a defmethod-argument-list)
-                 (contents $?before ?last)
-                 (parent ?parent))
-         (object (is-a list)
-                 (name ?last)
-                 (contents ?mname))
-         (object (is-a defmethod)
-                 (name ?parent)
-                 (method-name ?name))
+;(defrule error:defmethod-argument:wildcard-parameter:nested-list:no-types-or-query
+;         (stage (current parse))
+;         (object (is-a defmethod)
+;                 (arguments $?before ?last)
+;                 (parent ?parent))
+;         (object (is-a list)
+;                 (name ?last)
+;                 (contents ?mname))
+;         (object (is-a defmethod)
+;                 (name ?parent)
+;                 (method-name ?name))
+;
+;         =>
+;         (printout werror "ERROR: no type information provided in wildcard-parameter nested-list in defmethod: " ?name crlf)
+;         (halt))
 
-         =>
-         (printout werror "ERROR: no type information provided in wildcard-parameter nested-list in defmethod: " ?name crlf)
-         (halt))
+;(defrule error:defmethod-argument:wildcard-parameter:not-last-argument:bare
+;         (stage (current parse))
+;         (object (is-a defmethod)
+;                 (arguments $?before ?last ? $?)
+;                 (parent ?parent))
+;         (object (is-a multifield-variable)
+;                 (name ?last))
+;         (object (is-a defmethod)
+;                 (name ?parent)
+;                 (method-name ?name))
+;
+;         =>
+;         (printout werror "ERROR: only the last argument of a defmethod list can be a wildcard-parameter!" crlf
+;                   tab "Offending method is: " ?name crlf)
+;         (halt))
 
-(defrule error:defmethod-argument:wildcard-parameter:not-last-argument:bare
-         (stage (current parse))
-         (object (is-a defmethod-argument-list)
-                 (contents $?before ?last ? $?)
-                 (parent ?parent))
-         (object (is-a multifield-variable)
-                 (name ?last))
-         (object (is-a defmethod)
-                 (name ?parent)
-                 (method-name ?name))
-
-         =>
-         (printout werror "ERROR: only the last argument of a defmethod list can be a wildcard-parameter!" crlf
-                   tab "Offending method is: " ?name crlf)
-         (halt))
-
-(defrule error:defmethod-argument:wildcard-parameter:not-last-argument:nested-list
-         (stage (current parse))
-         (object (is-a defmethod-argument-list)
-                 (contents $?before ?last ? $?)
-                 (parent ?parent))
-         (object (is-a list)
-                 (name ?last)
-                 (contents ?arg $?))
-         (object (is-a multifield-variable)
-                 (name ?arg))
-         (object (is-a defmethod)
-                 (name ?parent)
-                 (method-name ?name))
-
-         =>
-         (printout werror "ERROR: only the last argument of a defmethod list can be a wildcard-parameter!" crlf
-                   tab "Offending method is: " ?name crlf)
-         (halt))
+;(defrule error:defmethod-argument:wildcard-parameter:not-last-argument:nested-list
+;         (stage (current parse))
+;         (object (is-a defmethod)
+;                 (arguments $?before ?last ? $?)
+;                 (parent ?parent))
+;         (object (is-a list)
+;                 (name ?last)
+;                 (contents ?arg $?))
+;         (object (is-a multifield-variable)
+;                 (name ?arg))
+;         (object (is-a defmethod)
+;                 (name ?parent)
+;                 (method-name ?name))
+;
+;         =>
+;         (printout werror "ERROR: only the last argument of a defmethod list can be a wildcard-parameter!" crlf
+;                   tab "Offending method is: " ?name crlf)
+;         (halt))
 
 (defrule build:defmethod-argument:singlefield-argument:all
          (stage (current parse))
-         (object (is-a defmethod-argument-list)
-                 (contents $? ?curr $?))
+         (object (is-a defmethod)
+                 (arguments $? ?curr $?))
          ?f <- (object (is-a list)
                        (name ?curr)
                        (parent ?parent)
@@ -318,9 +302,9 @@
 
 (defrule build:defmethod-argument:singlefield-argument:types-only
          (stage (current parse))
-         (object (is-a defmethod-argument-list)
+         (object (is-a defmethod)
                  (name ?args)
-                 (contents $? ?curr $?))
+                 (arguments $? ?curr $?))
          ?f <- (object (is-a list)
                        (name ?curr)
                        (contents ?mname
@@ -337,9 +321,9 @@
          (modify-instance ?f2 (parent ?name)))
 (defrule build:defmethod-argument:singlefield-argument:query-only
          (stage (current parse))
-         (object (is-a defmethod-argument-list)
+         (object (is-a defmethod)
                  (name ?args)
-                 (contents $? ?curr $?))
+                 (arguments $? ?curr $?))
          ?f <- (object (is-a list)
                        (name ?curr)
                        (contents ?mname

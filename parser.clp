@@ -88,6 +88,30 @@
   (is-a USER)
   (slot comment
         (type STRING)))
+(defclass has-local-binds
+  (is-a USER)
+  (multislot local-binds
+             (visibility public)))
+
+(defclass has-arguments
+  (is-a USER)
+  (multislot arguments
+             (visibility public)))
+
+(defclass has-body
+  (is-a USER)
+  (multislot body
+             (visibility public)))
+
+(defclass execution-fragment
+  "An amalgamation of several different types"
+  (is-a thing
+        has-body
+        has-local-binds
+        has-arguments
+        has-comment))
+ 
+
 (defclass composite-thing
   "A thing that is made up of other things. This is separate from a list!"
   (is-a thing)
