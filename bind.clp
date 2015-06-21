@@ -23,15 +23,16 @@
   (slot variable
         (type INSTANCE)
         (default ?NONE))
-  (slot value
-        (default ?NONE)))
+  (multislot value
+             (default ?NONE)))
+
 
 (defrule parse-bind-operation
          (stage (current parse))
          ?f <- (object (is-a list)
                        (contents bind
                                  ?var
-                                 ?value)
+                                 $?value)
                        (parent ?parent)
                        (name ?name))
          (object (is-a variable)
@@ -42,7 +43,6 @@
                         (parent ?parent)
                         (variable ?var)
                         (value ?value)))
-
 ; association rules
 (defrule register-local-binds 
          "take ownership of the local bound variables found in the current function"
@@ -65,8 +65,8 @@
          ; now we need to take ownership of the variable in the bind since we didn't find it 
          ; in the local binds nor the arguments
          (bind ?ref (instance-name (make-instance of reference
-                                                 (parent ?bind-name)
-                                                 (value ?var))))
+                                                  (parent ?bind-name)
+                                                  (value ?var))))
          (modify-instance ?v (parent ?function))
          (modify-instance ?bind (variable ?ref))
          (modify-instance ?func (local-binds $?lb ?var)))
