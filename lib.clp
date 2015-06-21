@@ -39,9 +39,8 @@
         (create$))
   (progn$ (?a ?list)
           (bind ?output 
-                (create$ ?output 
-                         (funcall ?fn 
-                                  ?a))))
+                ?output 
+                (funcall ?fn ?a)))
   (return ?output))
 
 (defmethod apply$
@@ -56,15 +55,15 @@
   (bind ?output (create$))
   (progn$ (?a ?list)
           (if (funcall ?fn ?a) then
-            (bind ?output (create$ ?output
-                                   ?a))))
+            (bind ?output 
+                  ?output
+                  ?a)))
   (return ?output))
 
 (defmethod filter$
   ((?fn SYMBOL)
    $?list)
-  (filter$ ?fn 
-           ?list))
+  (filter$ ?fn ?list))
 (defmethod hexchar-to-number
   ((?char STRING))
   (bind ?field (string-to-field (lowcase ?char)))
@@ -87,17 +86,19 @@
   ((?a SYMBOL))
   (bind ?result 0)
   ; strip off the first two characters
-  (bind ?strip (sub-string 3 
-                           (length$ ?a)
-                           ?a))
+  (bind ?strip (sub-string 3 (length$ ?a) ?a))
   (bind ?len (length$ ?strip))
   ; Now go through and build up the number by extracting the current char
   ; converting it and then shifting left by the position of the digit in the
   ; original "number"
   (loop-for-count (?ind 1 ?len) do
-                  (bind ?result (+ ?result 
-                                   (left-shift (hexchar-to-number (sub-string ?ind ?ind ?strip))
-                                               (* (- ?len ?ind) 4)))))
+                  (bind ?result 
+                        (+ ?result 
+                           (left-shift 
+                             (hexchar-to-number (sub-string ?ind 
+                                                            ?ind 
+                                                            ?strip))
+                             (* (- ?len ?ind) 4)))))
   (return ?result))
 
 (defmethod exists$
@@ -107,8 +108,8 @@
           (if (funcall ?fn ?e) then
             (return TRUE)))
   (return FALSE))
+
 (defmethod exists$
   ((?fn SYMBOL)
    $?list)
-  (exists$ ?fn
-           ?list))
+  (exists$ ?fn ?list))

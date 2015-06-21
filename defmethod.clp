@@ -21,6 +21,32 @@
         (type INTEGER)
         (default-dynamic -1)))
 
+(defclass defmethod-argument
+  "An argument in a defmethod"
+  (is-a thing)
+  (slot argument-name
+        (type INSTANCE-NAME)
+        (default ?NONE))
+  (multislot types
+             (type SYMBOL))
+  (slot query))
+(defgeneric all-symbolsp
+            "returns true if all the elements in a list are symbols")
+(defmethod all-symbolsp
+  ((?list MULTIFIELD))
+  (bind ?result (filter$ symbolp
+                         ?list))
+  (= (length$ ?list)
+     (length$ ?result)))
+(defmethod all-symbolsp
+  ($?list)
+  (all-symbolsp ?list))
+
+(defmethod multifield-variablep
+  ((?var INSTANCE))
+  (eq (class ?var)
+      multifield-variable))
+
 (defrule build:defmethod:index:comment
          (stage (current parse))
          ?f <- (object (is-a list)
@@ -128,31 +154,6 @@
                         (arguments ?args)
                         (body ?body)))
 
-(defclass defmethod-argument
-  "An argument in a defmethod"
-  (is-a thing)
-  (slot argument-name
-        (type INSTANCE-NAME)
-        (default ?NONE))
-  (multislot types
-             (type SYMBOL))
-  (slot query))
-(defgeneric all-symbolsp
-            "returns true if all the elements in a list are symbols")
-(defmethod all-symbolsp
-  ((?list MULTIFIELD))
-  (bind ?result (filter$ symbolp
-                         ?list))
-  (= (length$ ?list)
-     (length$ ?result)))
-(defmethod all-symbolsp
-  ($?list)
-  (all-symbolsp ?list))
-
-(defmethod multifield-variablep
-  ((?var INSTANCE))
-  (eq (class ?var)
-      multifield-variable))
 
 ; we leave the bare ? and $? options alone as it make reconstruction easier
 (defrule build:defmethod-argument:wildcard-parameter:nested-list:types-and-query
