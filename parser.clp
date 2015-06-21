@@ -85,31 +85,30 @@
                     (create$ ?self:parent (send ?self:parent get-parent-chain)))
 
 (defclass has-comment
-  (is-a USER)
+  (is-a thing)
   (slot comment
         (type STRING)))
 (defclass has-local-binds
-  (is-a USER)
+  (is-a thing)
   (multislot local-binds
              (visibility public)))
 
 (defclass has-arguments
-  (is-a USER)
+  (is-a thing)
   (multislot arguments
              (visibility public)))
 
 (defclass has-body
-  (is-a USER)
+  (is-a thing)
   (multislot body
              (visibility public)))
 
-(defclass execution-fragment
+(defclass exec-fragment 
   "An amalgamation of several different types"
   (is-a thing
         has-body
         has-local-binds
-        has-arguments
-        has-comment))
+        has-arguments))
  
 
 (defclass composite-thing
