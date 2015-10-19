@@ -13,3 +13,4 @@
 (batch* bind.clp)
 ; static-analysis rules
 (batch* missing-comments.clp)
+(batch* salience-checks.clp)
