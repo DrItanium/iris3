@@ -18,12 +18,8 @@
 
 (defclass function
   (is-a thing
+        has-title
         has-comment)
-        
-  (slot function-name
-        (visibility public)
-        (type SYMBOL)
-        (default ?NONE))
   (multislot arguments
              (visibility public))
   (multislot local-binds
@@ -55,7 +51,7 @@
          (progn$ (?ag ?a) 
                  (send ?ag put-parent ?name))
          (make-instance ?name of deffunction
-                        (function-name ?func-name)
+                        (title ?func-name)
                         (parent ?parent)
                         (comment ?cvalue)
                         (arguments ?a)
@@ -77,7 +73,7 @@
          (progn$ (?ag ?a) 
                  (send ?ag put-parent ?name))
          (make-instance ?name of deffunction
-                        (function-name ?func-name)
+                        (title ?func-name)
                         (parent ?parent)
                         (arguments ?a)
                         (body ?body)))
@@ -122,7 +118,7 @@
                        (name ?id)
                        (parent ?parent))
          (object (is-a defclass)
-                 (class-name ?class-name)
+                 (title ?class-name)
                  (name ?class-id))
          ?f2 <- (object (is-a string)
                         (name ?comment)
@@ -138,7 +134,7 @@
                         (parent ?parent)
                         (comment ?cvalue)
                         (target-class ?class-id)
-                        (function-name ?message-name)
+                        (title ?message-name)
                         (handler-type ?handler-type)
                         (arguments ?params)
                         (body ?actions)))
@@ -156,7 +152,7 @@
                        (name ?id)
                        (parent ?parent))
          (object (is-a defclass)
-                 (class-name ?class-name)
+                 (title ?class-name)
                  (name ?class-id))
          ?f3 <- (object (is-a list)
                         (name ?parameters)
@@ -168,7 +164,7 @@
          (make-instance ?id of defmessage-handler
                         (parent ?parent)
                         (target-class ?class-id)
-                        (function-name ?message-name)
+                        (title ?message-name)
                         (handler-type ?handler-type)
                         (arguments ?params)
                         (body ?actions)))
@@ -185,7 +181,7 @@
                        (name ?id)
                        (parent ?parent))
          (object (is-a defclass)
-                 (class-name ?class-name)
+                 (title ?class-name)
                  (name ?class-id))
          ?f2 <- (object (is-a string)
                         (name ?comment)
@@ -201,7 +197,7 @@
                         (parent ?parent)
                         (comment ?cvalue)
                         (target-class ?class-id)
-                        (function-name ?message-name)
+                        (title ?message-name)
                         (arguments ?params)
                         (body ?actions)))
 
@@ -216,7 +212,7 @@
                        (name ?id)
                        (parent ?parent))
          (object (is-a defclass)
-                 (class-name ?class-name)
+                 (title ?class-name)
                  (name ?class-id))
          ?f3 <- (object (is-a list)
                         (name ?parameters)
@@ -262,7 +258,7 @@
          ?q <- (object (is-a function)
                        (arguments $?sfs&:(not (only-single-fields ?sfs))
                                   ?wc)
-                       (function-name ?function))
+                       (title ?function))
          (object (is-a multifield-variable)
                  (name ?wc))
          =>
@@ -274,7 +270,7 @@
          ?q <- (object (is-a function)
                        (arguments $?sf&:(has-wildcard-parameter ?sf)
                                   ?sf0)
-                       (function-name ?function))
+                       (title ?function))
          (object (is-a singlefield-variable)
                  (name ?sf0))
          =>

@@ -18,10 +18,8 @@
 
 (defclass deftemplate
   (is-a thing
+        has-title
         has-comment)
-  (slot template-name
-        (type SYMBOL)
-        (default ?NONE))
   (multislot slots))
 
 (defrule translate-deftemplate:comment
@@ -39,7 +37,7 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of deftemplate
-                        (template-name ?template-name)
+                        (title ?template-name)
                         (comment ?cvalue)
                         (parent ?parent)
                         (slots $?slots)))
@@ -55,7 +53,7 @@
          =>
          (unmake-instance ?f)
          (make-instance ?name of deftemplate
-          (template-name ?template-name)
+                        (title ?template-name)
                         (parent ?parent)
                         (slots $?slots)))
 

@@ -72,7 +72,7 @@
                  (send ?a put-parent ?id))
          (make-instance ?id of defmethod
                         (parent ?parent)
-                        (function-name ?name)
+                        (title ?name)
                         (index ?index)
                         (comment ?cvalue)
                         (arguments ?contents)
@@ -98,7 +98,7 @@
                  (send ?a put-parent ?id))
          (make-instance ?id of defmethod
                         (parent ?parent)
-                        (function-name ?name)
+                        (title ?name)
                         (index ?index)
                         (arguments ?contents)
                         (body ?body)))
@@ -126,7 +126,7 @@
                  (send ?a put-parent ?id))
          (make-instance ?id of defmethod
                         (parent ?parent)
-                        (function-name ?name)
+                        (title ?name)
                         (comment ?cvalue)
                         (arguments ?contents)
                         (body ?body)))
@@ -150,7 +150,7 @@
                  (send ?a put-parent ?id))
          (make-instance ?id of defmethod
                         (parent ?parent)
-                        (method-name ?name)
+                        (title ?name)
                         (arguments ?args)
                         (body ?body)))
 
@@ -235,7 +235,7 @@
 ;                 (contents ?mname))
 ;         (object (is-a defmethod)
 ;                 (name ?parent)
-;                 (method-name ?name))
+;                 (title ?name))
 ;
 ;         =>
 ;         (printout werror "ERROR: no type information provided in wildcard-parameter nested-list in defmethod: " ?name crlf)
@@ -250,7 +250,7 @@
 ;                 (name ?last))
 ;         (object (is-a defmethod)
 ;                 (name ?parent)
-;                 (method-name ?name))
+;                 (title ?name))
 ;
 ;         =>
 ;         (printout werror "ERROR: only the last argument of a defmethod list can be a wildcard-parameter!" crlf
@@ -269,7 +269,7 @@
 ;                 (name ?arg))
 ;         (object (is-a defmethod)
 ;                 (name ?parent)
-;                 (method-name ?name))
+;                 (title ?name))
 ;
 ;         =>
 ;         (printout werror "ERROR: only the last argument of a defmethod list can be a wildcard-parameter!" crlf
