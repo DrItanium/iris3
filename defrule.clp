@@ -16,7 +16,7 @@
 ;    misrepresented as being the original software.
 ; 3. This notice may not be removed or altered from any source distribution.
 
-(defclass match
+(defclass conditional-element
   (is-a thing)
   (slot binding
         (type LEXEME
@@ -24,10 +24,8 @@
   (multislot contents))
 (defclass defrule
   (is-a thing
+        has-title
         has-comment)
-  (slot rule-name
-        (type SYMBOL)
-        (default ?NONE))
   (slot salience
         (type INTEGER
               INSTANCE-NAME)
@@ -39,7 +37,7 @@
               INSTANCE-NAME)
         (allowed-symbols FALSE
                          TRUE))
-  (multislot matches)
+  (multislot conditional-elements)
   (multislot body))
 
 (defclass defrule-declaration
@@ -136,7 +134,7 @@
                        (contents defrule 
                                  ?rule-name 
                                  ?comment
-                                 $?matches
+                                 $?conditional-elements
                                  =>
                                  $?body)
                        (parent ?parent)
@@ -147,11 +145,11 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defrule 
-                        (rule-name ?rule-name)
+                        (title ?rule-name)
                         (comment ?cvalue)
                         (parent ?parent)
                         (body ?body)
-                        (matches ?matches)))
+                        (conditional-elements ?conditional-elements)))
 
 (defrule translate-defrule:no-comment:no-decl
          (declare (salience 1))
@@ -159,7 +157,7 @@
          ?f <- (object (is-a list)
                        (contents defrule
                                  ?rule-name
-                                 $?matches&:(no-strings-in-list ?matches)
+                                 $?conditional-elements&:(no-strings-in-list ?conditional-elements)
                                  =>
                                  $?body)
                        (parent ?parent)
@@ -167,9 +165,9 @@
          =>
          (unmake-instance ?f)
          (make-instance ?name of defrule
-                        (rule-name ?rule-name)
+                        (title ?rule-name)
                         (parent ?parent)
-                        (matches ?matches)
+                        (conditional-elements ?conditional-elements)
                         (body ?body)))
 
 (defrule translate-defrule:comment:decl
@@ -180,7 +178,7 @@
                                  ?rule-name 
                                  ?comment
                                  ?decl
-                                 $?matches
+                                 $?conditional-elements
                                  =>
                                  $?body)
                        (parent ?parent)
@@ -195,13 +193,13 @@
          =>
          (unmake-instance ?f ?f2 ?f4)
          (make-instance ?name of defrule 
-                        (rule-name ?rule-name)
+                        (title ?rule-name)
                         (auto-focus ?auto-focus)
                         (salience ?salience)
                         (comment ?cvalue)
                         (parent ?parent)
                         (body ?body)
-                        (matches ?matches)))
+                        (conditional-elements ?conditional-elements)))
 
 (defrule translate-defrule:no-comment:decl
          (declare (salience 2))
@@ -210,7 +208,7 @@
                        (contents defrule
                                  ?rule-name
                                  ?decl
-                                 $?matches&:(no-strings-in-list ?matches)
+                                 $?conditional-elements&:(no-strings-in-list ?conditional-elements)
                                  =>
                                  $?body)
                        (parent ?parent)
@@ -222,11 +220,11 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defrule
-                        (rule-name ?rule-name)
+                        (title ?rule-name)
                         (auto-focus ?auto-focus)
                         (salience ?salience)
                         (parent ?parent)
-                        (matches ?matches)
+                        (conditional-elements ?conditional-elements)
                         (body ?body)))
 
 
@@ -253,23 +251,23 @@
          =>
          (modify-instance ?f2 (parent ?name)))
 
-(defrule translate-match:no-binding
+(defrule translate-conditional-element:no-binding
          (stage (current parse))
          ?f <- (object (is-a defrule)
                        (name ?parent)
-                       (matches $?before ?list $?after))
+                       (conditional-elements $?before ?list $?after))
          ?q <- (object (is-a list)
                        (name ?list)
                        (contents $?contents))
          =>
          (unmake-instance ?q)
-         (make-instance ?list of match
+         (make-instance ?list of conditional-element
                         (parent ?parent)
                         (contents ?contents)))
 
 ;TODO: handle multiline strings
-(defrule translate-match:binding
-         "Before we construct defrule's we have to capture bound matches to prevent a matching ambiguity in a defrule between a comment and a bound match (both of them will show up as strings)"
+(defrule translate-conditional-element:binding
+         "Before we construct defrule's we have to capture bound conditional-elements to prevent a matching ambiguity in a defrule between a comment and a bound conditional-element (both of them will show up as strings)"
          (declare (salience ?*priority:three*))
          (stage (current parse))
          ?f <- (object (is-a list)
@@ -282,7 +280,7 @@
                         (contents $?contents))
          =>
          (unmake-instance ?f2)
-         (make-instance ?list of match
+         (make-instance ?list of conditional-element
                         (parent ?parent)
                         (binding ?var)
                         (contents ?contents))

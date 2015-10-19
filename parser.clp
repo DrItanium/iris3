@@ -96,6 +96,15 @@
                     ()
                     (eq ?self:comment nil))
 
+(defclass has-title
+ "Contains the title of something, usually the name of a rule, generic, etc"
+ (is-a USER)
+ (slot title
+       (type SYMBOL)
+       (visibility public)
+       (storage local)
+       (default ?NONE)))
+
 
 (defclass has-local-binds
   (is-a USER)

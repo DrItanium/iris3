@@ -28,10 +28,8 @@
                          after)))
 (defclass defclass
   (is-a thing
+        has-title
         has-comment)
-  (slot class-name
-        (type SYMBOL)
-        (default ?NONE))
   (multislot inherits-from)
   (slot role
         (type SYMBOL)
@@ -62,7 +60,7 @@
          =>
          (unmake-instance ?f ?f2 ?f3)
          (make-instance ?name of defclass
-                        (class-name ?class-name)
+                        (title ?class-name)
                         (parent ?parent)
                         (comment ?cvalue)
                         (inherits-from ?ia)
@@ -84,7 +82,7 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defclass
-                        (class-name ?class-name)
+                        (title ?class-name)
                         (parent ?parent)
                         (inherits-from ?ia)
                         (contents ?rest)))

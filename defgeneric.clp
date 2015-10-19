@@ -18,10 +18,9 @@
 
 (defclass defgeneric
   (is-a thing
-        has-comment)
-  (slot generic-name
-        (type SYMBOL)
-        (default ?NONE)))
+        has-title
+        has-comment))
+
 
 (defrule translate-defgeneric:no-comment
          (stage (current parse))
@@ -33,7 +32,7 @@
          =>
          (unmake-instance ?f)
          (make-instance ?name of defgeneric 
-                        (generic-name ?gen-name)
+                        (title ?gen-name)
                         (parent ?parent)))
 (defrule translate-defgeneric:comment
          (stage (current parse))
@@ -49,6 +48,6 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defgeneric 
-                        (generic-name ?gen-name)
+                        (title ?gen-name)
                         (comment ?cvalue)
                         (parent ?parent)))
