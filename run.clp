@@ -12,7 +12,8 @@
 (batch* defmodule.clp)
 (batch* bind.clp)
 (batch* create-mf.clp)
+(batch* make-instance.clp)
 ; static-analysis rules
-(batch* missing-comments.clp)
-(batch* salience-checks.clp)
+(batch* analysis/static/missing-comments.clp)
+(batch* analysis/static/salience-checks.clp)
 

@@ -33,8 +33,9 @@
          =>
          (retract ?f))
 (deffacts init-stages
-          (stage (current load)
-                 (rest lex
+          (stage (current init)
+                 (rest load
+                       lex
                        parse
                        associate
                        static-analysis
