@@ -81,7 +81,7 @@
                         (title ?title)
                         (parent ?p)
                         (value ?contents)))
-        
+
 
 (defclass modify-instance
   (is-a thing)
@@ -129,4 +129,4 @@
                         (title ?title)
                         (parent ?p)
                         (value ?contents)))
-        
+
