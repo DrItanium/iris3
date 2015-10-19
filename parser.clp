@@ -73,12 +73,9 @@
 (defmessage-handler thing part-of-a
                     "Checks to see if the current object or one of its parents are of a given type"
                     (?type)
-                    (if (eq (class ?self)
-                            ?type) then
-                      TRUE
-                      else
-                      (send ?self:parent 
-                            part-of-a ?type)))
+                    (or (eq (class ?self)
+                            ?type)
+                        (send ?self:parent part-of-a ?type)))
 (defmessage-handler thing get-parent-chain primary
                     "Construct a chain of all the parents of this thing"
                     ()
@@ -87,7 +84,19 @@
 (defclass has-comment
   (is-a USER)
   (slot comment
-        (type STRING)))
+        (type STRING
+              SYMBOL)
+        (allowed-symbols nil)
+        (visibility public)
+        (default-dynamic nil))
+  (message-handler is-missing-comment primary))
+
+(defmessage-handler has-comment is-missing-comment primary
+                    "Checks and makes sure that the comment field isn't empty and isn't just a bunch of spaces"
+                    ()
+                    (eq ?self:comment nil))
+
+
 (defclass has-local-binds
   (is-a USER)
   (multislot local-binds
