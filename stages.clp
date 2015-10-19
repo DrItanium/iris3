@@ -37,4 +37,5 @@
                  (rest lex
                        parse
                        associate
+                       static-analysis
                        optimize)))
