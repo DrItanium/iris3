@@ -23,9 +23,12 @@
   (slot variable
         (type INSTANCE)
         (default ?NONE))
-  (multislot value
-             (default ?NONE)))
+  (multislot value)
+  (message-handler is-unbind primary))
 
+(defmessage-handler bind is-unbind primary
+                    ()
+                    (= (length$ ?self:value) 0))
 
 (defrule parse-bind-operation
          (stage (current parse))
