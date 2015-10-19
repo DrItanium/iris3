@@ -39,12 +39,10 @@
   (role concrete)
   (pattern-match reactive))
 (defclass basic-slot
-  (is-a thing)
+  (is-a thing
+        has-title)
   (role abstract)
   (pattern-match non-reactive)
-  (slot slot-name
-        (type SYMBOL)
-        (default ?NONE))
   (slot default-value
         (type SYMBOL INSTANCE)
         (allowed-symbols nil)
@@ -225,7 +223,7 @@
          =>
          (unmake-instance ?q)
          (make-instance ?curr of defclass-single-slot
-                        (slot-name ?name)
+                        (title ?name)
                         (parent ?parent)
                         (facets ?rest)))
 
@@ -244,7 +242,7 @@
          =>
          (unmake-instance ?q)
          (make-instance ?curr of defclass-multislot 
-                        (slot-name ?name)
+                        (title ?name)
                         (parent ?parent)
                         (facets ?rest)))
 
@@ -669,7 +667,7 @@
          (unmake-instance ?f2)
          (make-instance ?slot of deftemplate-single-slot
                         (parent ?parent)
-                        (slot-name ?name)
+                        (title ?name)
                         (facets ?facets)))
 
 (defrule translate-deftemplate:multislot
@@ -688,5 +686,5 @@
          (unmake-instance ?f2)
          (make-instance ?slot of deftemplate-multislot
                         (parent ?parent)
-                        (slot-name ?name)
+                        (title ?name)
                         (facets ?facets)))

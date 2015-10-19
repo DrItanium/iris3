@@ -11,3 +11,5 @@
 (batch* defmethod.clp)
 (batch* defmodule.clp)
 (batch* bind.clp)
+; static-analysis rules
+(batch* missing-comments.clp)

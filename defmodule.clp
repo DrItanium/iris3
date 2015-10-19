@@ -18,6 +18,7 @@
 
 (defclass defmodule
   (is-a thing
+        has-title
         has-comment)
   (multislot specifications))
 ; TODO: flesh out further
@@ -35,6 +36,7 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defmodule
+                        (title ?name)
                         (parent  ?parent)
                         (comment ?cvalue)
                         (specifications ?specs)))
