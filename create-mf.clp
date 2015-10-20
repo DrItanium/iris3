@@ -50,6 +50,10 @@
 (deffunction zero-or-more-marker
              (?a)
              (create$ ?a *))
+(deffunction zero-or-one-input-marker
+             (?a)
+             (create$ ?a 
+                      zero-or-one))
 (deffunction siso-input
              ($?elements)
              (apply$ single-input-marker
@@ -66,8 +70,14 @@
              ($?elements)
              (apply$ two-or-more-marker
                      ?elements))
+(deffunction zero-or-one-inputs
+             ($?elements)
+             (apply$ zero-or-one-input-marker 
+                     ?elements))
+
 (deffacts defsiso-functions
-          (builtin-functions (siso-input length$
+          (builtin-functions (zero-or-one-inputs exit)
+                             (siso-input length$
                                          rest$
                                          first$
                                          explode$
@@ -327,6 +337,66 @@
                        (name ?name))
          =>
          (printout t \"ERROR: %s expected two or more arguments, one provided!\" crlf))"
+                        ?name
+                        ?name
+                        ?name
+                        ?name)))
+
+(defrule process-zero-or-one-arg-functions
+         (stage (current init))
+         ?f <- (defbuiltin (function ?name)
+                           (arguments zero-or-one))
+         =>
+         (retract ?f)
+         (build (format nil "(defrule build-%s-node:zero-args
+                                      \"construct a %s node from the given list\"
+                                      (stage (current associate))
+                                      ?f <- (object (is-a list)
+                                                    (contents %s)
+                                                    (parent ?parent)
+                                                    (name ?name))
+                                      =>
+                                      (unmake-instance ?f)
+                                      (make-instance ?name of builtin-function
+                                                     (parent ?parent)
+                                                     (title %s)
+                                                     (contents)))"
+                        ?name 
+                        ?name 
+                        ?name 
+                        ?name))
+(build (format nil "(defrule build-%s-node:one-arg
+\"construct a %s node from the given list\"
+(stage (current associate))
+?f <- (object (is-a list)
+              (contents %s ?first)
+              (parent ?parent)
+              (name ?name))
+=>
+(unmake-instance ?f)
+(make-instance ?name of builtin-function
+               (parent ?parent)
+               (title %s)
+               (contents ?first)))"
+               ?name 
+               ?name 
+               ?name 
+               ?name))
+
+         (build (format nil 
+                        "(defrule build-%s-node:too-many-args 
+                                  \"The number of arguments passed to %s isn't exactly one or zero!\"
+                                  (stage (current associate))
+                                  ?f <- (object (is-a list)
+                                                (contents %s
+                                                          ?first
+                                                          ?second
+                                                          $?rest)
+                                                (parent ?parent)
+                                                (name ?name))
+                                  =>
+                                  (printout t \"ERROR: %s expected one (or zero) arguments but got '(%s \" ?first \" \" ?second \" ....)' instead!\" crlf))"
+                        ?name
                         ?name
                         ?name
                         ?name
