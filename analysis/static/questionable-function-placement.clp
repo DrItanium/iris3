@@ -18,12 +18,57 @@
 
 ; questionable usage of builtin functions
 
-(defrule Found-a-call-to-exit
+(defrule found-a-call-to-exit
          "Exit should never be called from a rule or function, halt should be used instead. 
-          Use of exit prevents proper clean up if something goes totally wrong"
+         Use of exit prevents proper clean up if something goes totally wrong"
          (stage (current static-analysis))
          (object (is-a builtin-function)
                  (title exit))
          =>
          (printout t "VIOLATION: Found use of exit! Exit should never be called within a run only at the REPL!" crlf
                    "           Use halt instead!" crlf))
+
+(defrule prefer-usage-of-not-neq:matching-constants
+         "If we see (or (eq ?a ?b) (eq ?a ?c)) then we should note that it really should be (not (neq ?a ?b ?c))"
+         (stage (current static-analysis))
+         (object (is-a builtin-function)
+                 (title or)
+                 (contents $? ?a $? ?b $?))
+         (object (is-a builtin-function)
+                 (name ?a)
+                 (title eq)
+                 (contents ?a0 ?a1))
+         (object (is-a builtin-function)
+                 (name ?b)
+                 (title eq)
+                 (contents ?a0 ?a2&~?a1))
+         =>
+         (printout t "VIOLATION: Found (or (eq " (send ?a0 representation) " " (send ?a1 representation) ")" crlf
+                   "                      (eq " (send ?a0 representation) " " (send ?a2 representation) "))" crlf crlf
+                   "           Use (not (neq " (send ?a0 representation) " " (send ?a1 representation) " " (send ?a2 representation) ")) instead!" crlf))
+
+(defrule prefer-usage-of-not-neq
+         "If we see (or (eq ?a ?b) (eq ?a ?c)) then we should note that it really should be (not (neq ?a ?b ?c))"
+         (stage (current static-analysis))
+         (object (is-a builtin-function)
+                 (title or)
+                 (contents $? ?a $? ?b $?))
+         (object (is-a builtin-function)
+                 (name ?a)
+                 (title eq)
+                 (contents ?a0 ?a1))
+         (object (is-a scalar-thing)
+                 (name ?a0)
+                 (value ?v))
+         (object (is-a builtin-function)
+                 (name ?b)
+                 (title eq)
+                 (contents ?a2 ?a3))
+         (object (is-a scalar-thing)
+                 (name ?a2)
+                 (value ?v))
+         =>
+         (printout t "VIOLATION: Found (or (eq "  ?v " " (send ?a1 representation) ")" crlf
+                   "                      (eq " ?v " " (send ?a3 representation) "))" crlf crlf
+                   "           Use (not (neq " ?v " " (send ?a1 representation) " " (send ?a3 representation) ")) instead!" crlf))
+

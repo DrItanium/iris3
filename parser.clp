@@ -426,6 +426,6 @@
 (defmessage-handler NUMBER representation primary
                     ()
                     ?self)
-(defmessage-handler LEXEME represetnation primary
+(defmessage-handler LEXEME representation primary
                     ()
                     ?self)
