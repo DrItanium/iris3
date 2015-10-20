@@ -72,3 +72,47 @@
                    "                      (eq " ?v " " (send ?a3 representation) "))" crlf crlf
                    "           Use (not (neq " ?v " " (send ?a1 representation) " " (send ?a3 representation) ")) instead!" crlf))
 
+
+(defrule found-use-of-return-as-last-statement-in-function
+         (stage (current static-analysis))
+         (object (is-a function)
+                 (name ?func)
+                 (title ?title)
+                 (body $? ?last))
+         (object (is-a builtin-function)
+                 (name ?last)
+                 (title return))
+         =>
+         (printout t "VIOLATION: Found that " (class ?func) " " ?title " has a return statement as the last statment in its body!" crlf
+                   "           In LISP-like languages, this is not necessary as the last value in a body is returned automatically!" crlf))
+
+
+(defrule found-use-of-return-in-defrule
+         (stage (current static-analysis))
+         ?f <- (object (is-a builtin-function)
+                       (title return))
+         (test (send ?f part-of-a defrule))
+         (object (is-a defrule)
+                 (name ?defrule&:(member$ ?defrule 
+                                          (send ?f get-parent-chain)))
+                 (title ?t))
+         =>
+         (printout t "NOTE: Found that defrule " ?t " contains a return statement!" crlf
+                   "      If it is on the RHS then please be careful as it won't do what you expect in some cases!" crlf
+                   "      If it is on the LHS then it is a VIOLATION and should NEVER EVER be done!" crlf))
+
+(defrule found-eq-false-call
+         (stage (current static-analysis))
+         (object (is-a builtin-function)
+                 (title eq)
+                 (contents $? FALSE $?))
+         =>
+         (printout t "VIOLATION: found an (eq .... FALSE) function! Please don't do this, use not instead!" crlf))
+(defrule found-eq-true-call
+         (stage (current static-analysis))
+         (object (is-a builtin-function)
+                 (title eq)
+                 (contents $? TRUE $?))
+         =>
+         (printout t "VIOLATION: found an (eq .... TRUE) function! Please don't do this, remove the eq call completely!" crlf))
+    

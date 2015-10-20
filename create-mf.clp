@@ -76,7 +76,8 @@
                      ?elements))
 
 (deffacts defsiso-functions
-          (builtin-functions (zero-or-one-inputs exit)
+          (builtin-functions (zero-or-one-inputs exit
+                                                 return)
                              (siso-input length$
                                          rest$
                                          first$
