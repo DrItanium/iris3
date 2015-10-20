@@ -224,7 +224,7 @@
          (make-instance ?id of defmessage-handler
                         (parent ?parent)
                         (target-class ?class-id)
-                        (message-name ?message-name)
+                        (title ?message-name)
                         (arguments ?params)
                         (body ?actions)))
 

@@ -35,9 +35,10 @@
                  (name ?var)
                  (value ?val))
          =>
-         (printout t "VIOLATION: the statement (bind " ?val " ... (create$ " ?first " ...) ...  ) contains a create$ call!" crlf
+         (printout t "VIOLATION: the statement (bind " ?val " ... (create$ " (send ?first representation) " ... ) ... ) contains a create$ call!" crlf
                    "           This is not necessary as bind takes in a variable number of arguments!" crlf
-                   "           Just place the contents directly!" crlf))
+                   "           Just place the contents directly like: " crlf crlf
+                   "           (bind " ?val " ... " (send ?first representation) " ... )" crlf))
 (defrule expand$-found-in-bind
          "It is not necessary to expand a multifield in a bind, that is done automatically"
          (stage (current static-analysis))

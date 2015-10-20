@@ -70,6 +70,7 @@
         (default ?NONE))
   (message-handler part-of-a primary)
   (message-handler get-parent-chain primary))
+ 
 (defmessage-handler thing part-of-a
                     "Checks to see if the current object or one of its parents are of a given type"
                     (?type)
@@ -103,7 +104,11 @@
        (type SYMBOL)
        (visibility public)
        (storage local)
-       (default ?NONE)))
+       (default ?NONE))
+ (message-handler representation primary))
+(defmessage-handler has-title representation primary
+                    ()
+                    ?self:title)
 
 
 (defclass has-local-binds
@@ -140,6 +145,9 @@
   (slot value
         (visibility public)
         (default ?NONE)))
+(defmessage-handler scalar-thing representation primary
+                    ()
+                    ?self:value)
 (defmethod construct-instance
   ((?class SYMBOL)
    (?parent SYMBOL
@@ -415,3 +423,9 @@
          (close ?name)
          (retract ?f))
 ;-----------------------------------------------------------------------------
+(defmessage-handler NUMBER representation primary
+                    ()
+                    ?self)
+(defmessage-handler LEXEME represetnation primary
+                    ()
+                    ?self)
