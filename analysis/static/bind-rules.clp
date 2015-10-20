@@ -21,19 +21,35 @@
 
 (defrule create$-found-in-bind
          "It is a common mistake of mine to put (bind ?something (create$ ?a ?b ?c)) when you can do
-          (bind ?something ?a ?b ?c). So point that out"
-          (stage (current static-analysis))
-          ?f <- (object (is-a bind)
-                        (variable ?var)
-                        (value $? ?a $?))
-          (object (is-a builtin-function)
-                  (name ?a)
-                  (title create$)
-                  (contents $?contents))
-          (object (is-a singlefield-variable)
-                  (name ?var)
-                  (value ?val))
-          =>
-          (printout t "VIOLATION: the statement (bind " ?val " ...) contains a create$ call!" crlf
-                      "           This is not necessary as bind takes in a variable number of arguments!" crlf
-                      "           Just place the contents directly!" crlf))
+         (bind ?something ?a ?b ?c). So point that out"
+         (stage (current static-analysis))
+         ?f <- (object (is-a bind)
+                       (variable ?var)
+                       (value $? ?a $?))
+         (object (is-a builtin-function)
+                 (name ?a)
+                 (title create$)
+                 (contents $?contents))
+         (object (is-a singlefield-variable)
+                 (name ?var)
+                 (value ?val))
+         =>
+         (printout t "VIOLATION: the statement (bind " ?val " ...) contains a create$ call!" crlf
+                   "           This is not necessary as bind takes in a variable number of arguments!" crlf
+                   "           Just place the contents directly!" crlf))
+(defrule expand$-found-in-bind
+         "It is not necessary to expand a multifield in a bind, that is done automatically"
+         (stage (current static-analysis))
+         ?f <- (object (is-a bind)
+                       (variable ?var)
+                       (value $? ?a $?))
+         (object (is-a builtin-function)
+                 (name ?a)
+                 (title expand$))
+         (object (is-a singlefield-variable)
+                 (name ?var)
+                 (value ?val))
+         =>
+         (printout t "VIOLATION: the statement (bind " ?val " ...) contains an expand$ call!" crlf
+                   "           This is not necessary as bind will automatically expand multifields as necessary!" crlf))
+

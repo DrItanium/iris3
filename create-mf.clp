@@ -72,6 +72,7 @@
                                          first$
                                          explode$
                                          implode$
+                                         expand$
                                          eval
                                          build
                                          lowcase
