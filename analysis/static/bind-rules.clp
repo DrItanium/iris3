@@ -29,12 +29,13 @@
          (object (is-a builtin-function)
                  (name ?a)
                  (title create$)
-                 (contents $?contents))
+                 ; at least one element
+                 (contents ?first $?))
          (object (is-a singlefield-variable)
                  (name ?var)
                  (value ?val))
          =>
-         (printout t "VIOLATION: the statement (bind " ?val " ...) contains a create$ call!" crlf
+         (printout t "VIOLATION: the statement (bind " ?val " ... (create$ " ?first " ...) ...  ) contains a create$ call!" crlf
                    "           This is not necessary as bind takes in a variable number of arguments!" crlf
                    "           Just place the contents directly!" crlf))
 (defrule expand$-found-in-bind
@@ -53,3 +54,16 @@
          (printout t "VIOLATION: the statement (bind " ?val " ...) contains an expand$ call!" crlf
                    "           This is not necessary as bind will automatically expand multifields as necessary!" crlf))
 
+(defrule empty-bind-found
+         "While it is possible to undefine variables, it shouldn't be done as it isn't clean."
+         (stage (current static-analysis))
+         ?f <- (object (is-a bind)
+                       (variable ?var)
+                       (value))
+         (object (is-a singlefield-variable)
+                 (name ?var)
+                 (value ?val))
+         =>
+         (printout t 
+                   "POTENTIAL VIOLATION: the statement (bind " ?val ") is meant to unbind the " ?val " variable." crlf
+                   "                     This is questionable if it is the correct thing to do as it can mean there are attempts at premature optimization" crlf))
