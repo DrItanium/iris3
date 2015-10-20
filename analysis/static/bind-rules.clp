@@ -35,10 +35,11 @@
                  (name ?var)
                  (value ?val))
          =>
-         (printout t "VIOLATION: the statement (bind " ?val " ... (create$ " (send ?first representation) " ... ) ... ) contains a create$ call!" crlf
-                   "           This is not necessary as bind takes in a variable number of arguments!" crlf
-                   "           Just place the contents directly like: " crlf crlf
-                   "           (bind " ?val " ... " (send ?first representation) " ... )" crlf))
+         (violation t "The statement (bind " ?val " ... (create$ " (send ?first representation) " ... ) ... ) contains a create$ call!" crlf
+                    "This is not necessary as bind takes in a variable number of arguments!" crlf
+                    "Just place the contents directly like: " crlf crlf
+                    "(bind " ?val " ... " (send ?first representation) " ... )"))
+
 (defrule expand$-found-in-bind
          "It is not necessary to expand a multifield in a bind, that is done automatically"
          (stage (current static-analysis))
@@ -52,8 +53,8 @@
                  (name ?var)
                  (value ?val))
          =>
-         (printout t "VIOLATION: the statement (bind " ?val " ...) contains an expand$ call!" crlf
-                   "           This is not necessary as bind will automatically expand multifields as necessary!" crlf))
+         (violation t "The statement (bind " ?val " ...) contains an expand$ call!" crlf
+                    "This is not necessary as bind will automatically expand multifields as necessary!"))
 
 (defrule empty-bind-found
          "While it is possible to undefine variables, it shouldn't be done as it isn't clean."
@@ -65,6 +66,5 @@
                  (name ?var)
                  (value ?val))
          =>
-         (printout t 
-                   "POTENTIAL VIOLATION: the statement (bind " ?val ") is meant to unbind the " ?val " variable." crlf
-                   "                     This is questionable if it is the correct thing to do as it can mean there are attempts at premature optimization" crlf))
+         (potential-violation t "The statement (bind " ?val ") is meant to unbind the " ?val " variable." crlf
+                              "This is questionable if it is the correct thing to do as it can mean there are attempts at premature optimization" crlf))

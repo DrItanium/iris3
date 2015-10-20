@@ -23,6 +23,4 @@
                                         (<> ?value 0)))
                  (title ?rule-name))
          =>
-         (format t "VIOLATION: defrule named %s has an explicitly defined salience value of %d, prefer a defglobal!%n"
-                 ?rule-name
-                 ?value))
+         (violation t "defrule named " ?rule-name "has an explicitly defined salience value of " ?value ", prefer a defglobal!"))

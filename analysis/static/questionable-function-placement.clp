@@ -25,8 +25,8 @@
          (object (is-a builtin-function)
                  (title exit))
          =>
-         (printout t "VIOLATION: Found use of exit! Exit should never be called within a run only at the REPL!" crlf
-                   "           Use halt instead!" crlf))
+         (violation t "Found use of exit! Exit should only be called at the REPL!" crlf
+                    "Use halt instead!"))
 
 (defrule prefer-usage-of-not-neq:matching-constants
          "If we see (or (eq ?a ?b) (eq ?a ?c)) then we should note that it really should be (not (neq ?a ?b ?c))"
@@ -43,9 +43,10 @@
                  (title eq)
                  (contents ?a0 ?a2&~?a1))
          =>
-         (printout t "VIOLATION: Found (or (eq " (send ?a0 representation) " " (send ?a1 representation) ")" crlf
-                   "                      (eq " (send ?a0 representation) " " (send ?a2 representation) "))" crlf crlf
-                   "           Use (not (neq " (send ?a0 representation) " " (send ?a1 representation) " " (send ?a2 representation) ")) instead!" crlf))
+         (violation t "Found (or (eq " (send ?a0 representation) " " (send ?a1 representation) ")" crlf
+                    "          (eq " (send ?a0 representation) " " (send ?a2 representation) "))" crlf crlf
+                    "Use (not (neq " (send ?a0 representation) " " (send ?a1 representation) " " (send ?a2 representation) ")) instead!"))
+
 
 (defrule prefer-usage-of-not-neq
          "If we see (or (eq ?a ?b) (eq ?a ?c)) then we should note that it really should be (not (neq ?a ?b ?c))"
@@ -68,9 +69,10 @@
                  (name ?a2)
                  (value ?v))
          =>
-         (printout t "VIOLATION: Found (or (eq "  ?v " " (send ?a1 representation) ")" crlf
-                   "                      (eq " ?v " " (send ?a3 representation) "))" crlf crlf
-                   "           Use (not (neq " ?v " " (send ?a1 representation) " " (send ?a3 representation) ")) instead!" crlf))
+         (violation t "Found (or (eq " ?v " " (send ?a1 representation) ")" crlf
+                    "          (eq " ?v " " (send ?a3 representation) "))" crlf
+                    "Use (not (neq " ?v " " (send ?a1 representation) " " (send ?a3 representation) ")) instead!"))
+
 
 
 (defrule found-use-of-return-as-last-statement-in-function
@@ -83,8 +85,8 @@
                  (name ?last)
                  (title return))
          =>
-         (printout t "VIOLATION: Found that " (class ?func) " " ?title " has a return statement as the last statment in its body!" crlf
-                   "           In LISP-like languages, this is not necessary as the last value in a body is returned automatically!" crlf))
+         (violation t "Found that " (class ?func) " " ?title " has a return statement as the last statment in its body!" crlf
+                    "In LISP-like languages, this is not necessary as the last value in a body is returned automatically!"))
 
 
 (defrule found-use-of-return-in-defrule
@@ -97,9 +99,9 @@
                                           (send ?f get-parent-chain)))
                  (title ?t))
          =>
-         (printout t "NOTE: Found that defrule " ?t " contains a return statement!" crlf
-                   "      If it is on the RHS then please be careful as it won't do what you expect in some cases!" crlf
-                   "      If it is on the LHS then it is a VIOLATION and should NEVER EVER be done!" crlf))
+         (note t "Found that defrule " ?t " contains a return statement!" crlf
+               "If it is on the RHS then please be careful as it won't do what you expect in some cases!" crlf
+               "If it is on the LHS then it is a VIOLATION and should NEVER EVER be done!"))
 
 (defrule found-eq-false-call
          (stage (current static-analysis))
@@ -107,12 +109,13 @@
                  (title eq)
                  (contents $? FALSE $?))
          =>
-         (printout t "VIOLATION: found an (eq .... FALSE) function! Please don't do this, use not instead!" crlf))
+         (violation t "Found an (eq .... FALSE) function! Please don't do this, use not instead!"))
+
 (defrule found-eq-true-call
          (stage (current static-analysis))
          (object (is-a builtin-function)
                  (title eq)
                  (contents $? TRUE $?))
          =>
-         (printout t "VIOLATION: found an (eq .... TRUE) function! Please don't do this, remove the eq call completely!" crlf))
-    
+         (violation t "Found an (eq .... TRUE) function! Plase don't do this, remove the eq call completely!"))
+

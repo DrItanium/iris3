@@ -14,6 +14,7 @@
 (batch* create-mf.clp)
 (batch* make-instance.clp)
 ; static-analysis rules
+(batch* analysis/static/lib.clp)
 (batch* analysis/static/missing-comments.clp)
 (batch* analysis/static/salience-checks.clp)
 (batch* analysis/static/bind-rules.clp)
