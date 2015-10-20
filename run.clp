@@ -18,4 +18,5 @@
 (batch* analysis/static/salience-checks.clp)
 (batch* analysis/static/bind-rules.clp)
 (batch* analysis/static/defmessage-handler.clp)
+(batch* analysis/static/questionable-function-placement.clp)
 
