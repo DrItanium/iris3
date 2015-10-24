@@ -32,6 +32,16 @@
             "Converts a hexidecimal character to its decimal representation")
 (defgeneric exists$
             "Checks to see if a given predicate function returns true for at least one element in a list")
+(defgeneric all-match$
+            "Checks to see if a given predicate applies to all elements in the provided list")
+
+(defmethod all-match$
+ ((?fn SYMBOL)
+  (?list MULTIFIELD))
+ (progn$ (?a ?list)
+         (if (not (funcall ?fn ?a)) then
+             (return FALSE)))
+ TRUE)
 (defmethod apply$
   ((?fn SYMBOL)
    (?list MULTIFIELD))

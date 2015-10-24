@@ -21,7 +21,16 @@
   (slot binding
         (type LEXEME
               INSTANCE-NAME))
+  (slot is-object-match
+        (type SYMBOL)
+        (allowed-symbols FALSE
+                         TRUE))
+  (slot is-template-match
+        (type SYMBOL)
+        (allowed-symbols FALSE
+                         TRUE))
   (multislot contents))
+
 (defclass defrule
   (is-a thing
         has-title
@@ -37,8 +46,8 @@
               INSTANCE-NAME)
         (allowed-symbols FALSE
                          TRUE))
-  (multislot conditional-elements)
-  (multislot body))
+  (multislot left-hand-side)
+  (multislot right-hand-side))
 
 (defclass defrule-declaration
   "Used as a layer of indirection for salience and auto-focus fields"
@@ -134,9 +143,9 @@
                        (contents defrule 
                                  ?rule-name 
                                  ?comment
-                                 $?conditional-elements
+                                 $?left-hand-side
                                  =>
-                                 $?body)
+                                 $?right-hand-side)
                        (parent ?parent)
                        (name ?name))
          ?f2 <- (object (is-a string)
@@ -148,8 +157,8 @@
                         (title ?rule-name)
                         (comment ?cvalue)
                         (parent ?parent)
-                        (body ?body)
-                        (conditional-elements ?conditional-elements)))
+                        (right-hand-side ?right-hand-side)
+                        (left-hand-side ?left-hand-side)))
 
 (defrule translate-defrule:no-comment:no-decl
          (declare (salience 1))
@@ -157,9 +166,9 @@
          ?f <- (object (is-a list)
                        (contents defrule
                                  ?rule-name
-                                 $?conditional-elements&:(no-strings-in-list ?conditional-elements)
+                                 $?left-hand-side&:(no-strings-in-list ?left-hand-side)
                                  =>
-                                 $?body)
+                                 $?right-hand-side)
                        (parent ?parent)
                        (name ?name))
          =>
@@ -167,8 +176,8 @@
          (make-instance ?name of defrule
                         (title ?rule-name)
                         (parent ?parent)
-                        (conditional-elements ?conditional-elements)
-                        (body ?body)))
+                        (left-hand-side ?left-hand-side)
+                        (right-hand-side ?right-hand-side)))
 
 (defrule translate-defrule:comment:decl
          (declare (salience 2))
@@ -178,9 +187,9 @@
                                  ?rule-name 
                                  ?comment
                                  ?decl
-                                 $?conditional-elements
+                                 $?left-hand-side
                                  =>
-                                 $?body)
+                                 $?right-hand-side)
                        (parent ?parent)
                        (name ?name))
          ?f4 <- (object (is-a string)
@@ -198,8 +207,8 @@
                         (salience ?salience)
                         (comment ?cvalue)
                         (parent ?parent)
-                        (body ?body)
-                        (conditional-elements ?conditional-elements)))
+                        (right-hand-side ?right-hand-side)
+                        (left-hand-side ?left-hand-side)))
 
 (defrule translate-defrule:no-comment:decl
          (declare (salience 2))
@@ -208,9 +217,9 @@
                        (contents defrule
                                  ?rule-name
                                  ?decl
-                                 $?conditional-elements&:(no-strings-in-list ?conditional-elements)
+                                 $?left-hand-side&:(no-strings-in-list ?left-hand-side)
                                  =>
-                                 $?body)
+                                 $?right-hand-side)
                        (parent ?parent)
                        (name ?name))
          ?f2 <- (object (is-a defrule-declaration)
@@ -224,8 +233,8 @@
                         (auto-focus ?auto-focus)
                         (salience ?salience)
                         (parent ?parent)
-                        (conditional-elements ?conditional-elements)
-                        (body ?body)))
+                        (left-hand-side ?left-hand-side)
+                        (right-hand-side ?right-hand-side)))
 
 
 (defrule update-auto-focus
@@ -255,7 +264,7 @@
          (stage (current parse))
          ?f <- (object (is-a defrule)
                        (name ?parent)
-                       (conditional-elements $?before ?list $?after))
+                       (left-hand-side $?before ?list $?after))
          ?q <- (object (is-a list)
                        (name ?list)
                        (contents $?contents))
@@ -267,7 +276,7 @@
 
 ;TODO: handle multiline strings
 (defrule translate-conditional-element:binding
-         "Before we construct defrule's we have to capture bound conditional-elements to prevent a matching ambiguity in a defrule between a comment and a bound conditional-element (both of them will show up as strings)"
+         "Before we construct defrule's we have to capture bound left-hand-side to prevent a matching ambiguity in a defrule between a comment and a bound conditional-element (both of them will show up as strings)"
          (declare (salience ?*priority:three*))
          (stage (current parse))
          ?f <- (object (is-a list)
@@ -288,3 +297,20 @@
                           (contents $?before
                                     ?list
                                     $?after)))
+(defrule mark-conditional-element-as-object-match
+         (stage (current parse))
+         ?f <- (object (is-a conditional-element)
+                       (contents object $?rest))
+         =>
+         (modify-instance ?f 
+                          (contents $?rest)
+                          (is-object-match TRUE)))
+
+(defrule mark-conditional-element-as-template-match
+         (stage (current parse))
+         ?f <- (object (is-a conditional-element)
+                       (contents ?target&~object $?))
+         (object (is-a deftemplate)
+                 (title ?target))
+         =>
+         (modify-instance ?f (is-template-match TRUE)))
