@@ -247,6 +247,12 @@
   (is-a thing)
   (multislot contents))
 
+(deffunction listp
+             (?a)
+             (and (instancep ?a)
+                  (eq (class ?a)
+                       list)))
+
 (defclass reference
   "An indirect reference to something else, useful for deffunctions and arguments"
   (is-a scalar-thing)

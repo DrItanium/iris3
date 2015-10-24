@@ -17,10 +17,18 @@
 ; 3. This notice may not be removed or altered from any source distribution.
 
 (defclass conditional-element
-  (is-a thing)
+  (is-a thing
+        has-title)
+  (slot title
+        (source composite)
+        (default-dynamic nil))
   (slot binding
         (type LEXEME
               INSTANCE-NAME))
+  (slot is-logical-match
+        (type SYMBOL)
+        (allowed-symbols FALSE
+                         TRUE))
   (slot is-object-match
         (type SYMBOL)
         (allowed-symbols FALSE
@@ -30,7 +38,11 @@
         (allowed-symbols FALSE
                          TRUE))
   (multislot contents))
-
+(defclass conditional-element-slot
+  "Represents a match slot found in a template or object conditional element"
+  (is-a thing
+        has-title)
+  (multislot contents))
 (defclass defrule
   (is-a thing
         has-title
@@ -300,17 +312,64 @@
 (defrule mark-conditional-element-as-object-match
          (stage (current parse))
          ?f <- (object (is-a conditional-element)
-                       (contents object $?rest))
+                       (contents object 
+                                 $?rest&:(all-match$ listp ?rest)))
          =>
+         (progn$ (?a ?rest)
+                 (assert (make conditional-element-slot ?a)))
          (modify-instance ?f 
-                          (contents $?rest)
+                          (contents ?rest)
+                          (title object)
                           (is-object-match TRUE)))
-
 (defrule mark-conditional-element-as-template-match
          (stage (current parse))
          ?f <- (object (is-a conditional-element)
-                       (contents ?target&~object $?))
+                       (contents ?target&~object $?rest&:(all-match$ listp ?rest)))
          (object (is-a deftemplate)
                  (title ?target))
          =>
-         (modify-instance ?f (is-template-match TRUE)))
+         (progn$ (?a ?rest)
+                 (assert (make conditional-element-slot ?a)))
+         (modify-instance ?f 
+                          (title ?target)
+                          (contents $?rest)
+                          (is-template-match TRUE)))
+
+(defrule mark-conditional-element-as-logical-match
+         (stage (current parse))
+         ?f <- (object (is-a conditional-element)
+                       (contents logical $?ces&:(all-match$ listp ?ces)))
+         =>
+         ; build contents as sub conditional elements
+         (progn$ (?a ?ces)
+                 (assert (make conditional-element ?a)))
+         (modify-instance ?f (is-logical-match TRUE)
+                          (contents $?ces)))
+(defrule build-nested-conditional-element
+         (stage (current parse))
+         ?f <- (make conditional-element ?ce)
+         ?o <- (object (is-a list)
+                       (name ?ce)
+                       (parent ?parent)
+                       (contents $?contents))
+         =>
+         (retract ?f)
+         (unmake-instance ?o)
+         (make-instance ?ce of conditional-element
+                        (parent ?parent)
+                        (contents $?contents)))
+
+(defrule build-conditional-element-slot
+         (stage (current parse))
+         ?f <- (make conditional-element-slot ?ce)
+         ?o <- (object (is-a list)
+                       (name ?ce)
+                       (parent ?parent)
+                       (contents ?title $?value))
+         =>
+         (retract ?f)
+         (unmake-instance ?o)
+         (make-instance ?ce of conditional-element-slot
+                        (parent ?parent)
+                        (title ?title)
+                        (contents $?value)))
