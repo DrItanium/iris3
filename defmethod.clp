@@ -335,8 +335,8 @@
          =>
          (unmake-instance ?f)
          (bind ?name (make-instance ?curr of defmethod-argument
-                                                   (parent ?args)
-                                                   (argument-name ?mname)
-                                                   (query ?query)))
+                                    (parent ?args)
+                                    (argument-name ?mname)
+                                    (query ?query)))
          (modify-instance ?f2 (parent ?name))
          (modify-instance ?f3 (parent ?name)))
