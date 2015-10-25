@@ -151,7 +151,7 @@
          (make-instance ?id of defmethod
                         (parent ?parent)
                         (title ?name)
-                        (arguments ?args)
+                        (arguments ?contents)
                         (body ?body)))
 
 
@@ -173,11 +173,11 @@
                         (name ?query))
          =>
          (unmake-instance ?f2)
-         (bind ?name (instance-name (make-instance ?last of defmethod-argument
-                                                   (argument-name ?mname)
-                                                   (parent ?args)
-                                                   (types ?type ?types)
-                                                   (query ?query))))
+         (bind ?name (make-instance ?last of defmethod-argument
+                                    (argument-name ?mname)
+                                    (parent ?args)
+                                    (types ?type ?types)
+                                    (query ?query)))
          (modify-instance ?f3 (parent ?name))
          (modify-instance ?f4 (parent ?name)))
 
@@ -196,10 +196,10 @@
          =>
          (unmake-instance ?f2)
          (modify-instance ?f3 
-                          (parent (instance-name (make-instance ?last of defmethod-argument
-                                                                (argument-name ?mname)
-                                                                (parent ?args)
-                                                                (types ?type ?types))))))
+                          (parent (make-instance ?last of defmethod-argument
+                                                 (argument-name ?mname)
+                                                 (parent ?args)
+                                                 (types ?type ?types)))))
 
 
 (defrule build:defmethod-argument:wildcard-parameter:nested-list:query
@@ -217,10 +217,10 @@
                         (name ?query))
          =>
          (unmake-instance ?f2)
-         (bind ?name (instance-name (make-instance ?last of defmethod-argument
-                                                   (argument-name ?mname)
-                                                   (parent ?args)
-                                                   (query ?query))))
+         (bind ?name (make-instance ?last of defmethod-argument
+                                    (argument-name ?mname)
+                                    (parent ?args)
+                                    (query ?query)))
          (modify-instance ?f3 (parent ?name))
          (modify-instance ?f4 (parent ?name)))
 
@@ -293,11 +293,11 @@
                         (name ?query))
          =>
          (unmake-instance ?f)
-         (bind ?name (instance-name (make-instance ?curr of defmethod-argument
-                                                   (parent ?parent)
-                                                   (argument-name ?mname)
-                                                   (types ?type ?types)
-                                                   (query ?query))))
+         (bind ?name (make-instance ?curr of defmethod-argument
+                                    (parent ?parent)
+                                    (argument-name ?mname)
+                                    (types ?type ?types)
+                                    (query ?query)))
          (modify-instance ?f2 (parent ?name))
          (modify-instance ?f3 (parent ?name)))
 
@@ -315,11 +315,10 @@
                         (name ?mname))
          =>
          (unmake-instance ?f)
-         (bind ?name (instance-name (make-instance ?curr of defmethod-argument
-                                                   (parent ?args)
-                                                   (argument-name ?mname)
-                                                   (types ?type ?types))))
-         (modify-instance ?f2 (parent ?name)))
+         (modify-instance ?f2 (parent (make-instance ?curr of defmethod-argument
+                                                     (parent ?args)
+                                                     (argument-name ?mname)
+                                                     (types ?type ?types)))))
 (defrule build:defmethod-argument:singlefield-argument:query-only
          (stage (current parse))
          (object (is-a defmethod)
@@ -335,9 +334,9 @@
                         (name ?query))
          =>
          (unmake-instance ?f)
-         (bind ?name (instance-name (make-instance ?curr of defmethod-argument
+         (bind ?name (make-instance ?curr of defmethod-argument
                                                    (parent ?args)
                                                    (argument-name ?mname)
-                                                   (query ?query))))
+                                                   (query ?query)))
          (modify-instance ?f2 (parent ?name))
          (modify-instance ?f3 (parent ?name)))
