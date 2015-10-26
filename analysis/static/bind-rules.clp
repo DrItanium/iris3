@@ -35,7 +35,7 @@
                  (name ?var)
                  (value ?val))
          =>
-         (violation t "The statement (bind " ?val " ... (create$ " (send ?first representation) " ... ) ... ) contains a create$ call!" crlf
+         (violation ?*current-router* "The statement (bind " ?val " ... (create$ " (send ?first representation) " ... ) ... ) contains a create$ call!" crlf
                     "This is not necessary as bind takes in a variable number of arguments!" crlf
                     "Just place the contents directly like: " crlf crlf
                     "(bind " ?val " ... " (send ?first representation) " ... )"))
@@ -53,7 +53,7 @@
                  (name ?var)
                  (value ?val))
          =>
-         (violation t "The statement (bind " ?val " ...) contains an expand$ call!" crlf
+         (violation ?*current-router* "The statement (bind " ?val " ...) contains an expand$ call!" crlf
                     "This is not necessary as bind will automatically expand multifields as necessary!"))
 
 (defrule empty-bind-found
@@ -66,5 +66,5 @@
                  (name ?var)
                  (value ?val))
          =>
-         (potential-violation t "The statement (bind " ?val ") is meant to unbind the " ?val " variable." crlf
+         (potential-violation ?*current-router* "The statement (bind " ?val ") is meant to unbind the " ?val " variable." crlf
                               "This is questionable if it is the correct thing to do as it can mean there are attempts at premature optimization" crlf))

@@ -23,4 +23,4 @@
                                         (<> ?value 0)))
                  (title ?rule-name))
          =>
-         (violation t "defrule named " ?rule-name "has an explicitly defined salience value of " ?value ", prefer a defglobal!"))
+         (violation ?*current-router* "defrule named " ?rule-name "has an explicitly defined salience value of " ?value ", prefer a defglobal!"))

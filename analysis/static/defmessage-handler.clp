@@ -28,7 +28,7 @@
                  (name ?class)
                  (title ?cname))
          =>
-         (violation t "found a message handler tied to defclass " ?cname " which responds to a message starting with a '.'!" crlf
+         (violation ?*current-router* "found a message handler tied to defclass " ?cname " which responds to a message starting with a '.'!" crlf
                     "This is a bad idea all around and shouldn't be done." crlf 
                     "The offending message handler is: " crlf crlf
                     "(defmessage-handler " ?cname " " ?title " " ?ht " .....)" crlf))

@@ -17,7 +17,7 @@
 ; 3. This notice may not be removed or altered from any source distribution.
 
 ; library functions for analysis
-
+(defglobal ?*current-router* = t)
 (deffunction report
              (?router ?title ?indent $?contents)
              (printout ?router ?title

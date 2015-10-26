@@ -25,7 +25,7 @@
          (object (is-a builtin-function)
                  (title exit))
          =>
-         (violation t "Found use of exit! Exit should only be called at the REPL!" crlf
+         (violation ?*current-router* "Found use of exit! Exit should only be called at the REPL!" crlf
                     "Use halt instead!"))
 
 (defrule prefer-usage-of-not-neq:matching-constants
@@ -43,7 +43,7 @@
                  (title eq)
                  (contents ?a0 ?a2&~?a1))
          =>
-         (violation t "Found (or (eq " (send ?a0 representation) " " (send ?a1 representation) ")" crlf
+         (violation ?*current-router* "Found (or (eq " (send ?a0 representation) " " (send ?a1 representation) ")" crlf
                     "          (eq " (send ?a0 representation) " " (send ?a2 representation) "))" crlf crlf
                     "Use (not (neq " (send ?a0 representation) " " (send ?a1 representation) " " (send ?a2 representation) ")) instead!"))
 
@@ -69,7 +69,7 @@
                  (name ?a2)
                  (value ?v))
          =>
-         (violation t "Found (or (eq " ?v " " (send ?a1 representation) ")" crlf
+         (violation ?*current-router* "Found (or (eq " ?v " " (send ?a1 representation) ")" crlf
                     "          (eq " ?v " " (send ?a3 representation) "))" crlf
                     "Use (not (neq " ?v " " (send ?a1 representation) " " (send ?a3 representation) ")) instead!"))
 
@@ -85,7 +85,7 @@
                  (name ?last)
                  (title return))
          =>
-         (violation t "Found that " (class ?func) " " ?title " has a return statement as the last statment in its body!" crlf
+         (violation ?*current-router* "Found that " (class ?func) " " ?title " has a return statement as the last statment in its body!" crlf
                     "In LISP-like languages, this is not necessary as the last value in a body is returned automatically!"))
 
 
@@ -99,7 +99,7 @@
                                           (send ?f get-parent-chain)))
                  (title ?t))
          =>
-         (note t "Found that defrule " ?t " contains a return statement!" crlf
+         (note ?*current-router* "Found that defrule " ?t " contains a return statement!" crlf
                "If it is on the RHS then please be careful as it won't do what you expect in some cases!" crlf
                "If it is on the LHS then it is a VIOLATION and should NEVER EVER be done!"))
 
@@ -109,7 +109,7 @@
                  (title eq)
                  (contents $? FALSE $?))
          =>
-         (violation t "Found an (eq .... FALSE) function! Please don't do this, use not instead!"))
+         (violation ?*current-router* "Found an (eq .... FALSE) function! Please don't do this, use not instead!"))
 
 (defrule found-eq-true-call
          (stage (current static-analysis))
@@ -117,5 +117,5 @@
                  (title eq)
                  (contents $? TRUE $?))
          =>
-         (violation t "Found an (eq .... TRUE) function! Plase don't do this, remove the eq call completely!"))
+         (violation ?*current-router* "Found an (eq .... TRUE) function! Plase don't do this, remove the eq call completely!"))
 

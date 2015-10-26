@@ -22,15 +22,13 @@
                        (comment nil)
                        (title ?title))
          =>
-         (format t "VIOLATION: %s named %s does not contain a comment!%n" 
-                 (class ?q)
-                 ?title))
+         (violation ?*current-router* (class ?q) " named " ?title " does not contain a comment!" crlf))
+
 
 (defrule target-thing-is-missing-a-comment:no-title
          (stage (current static-analysis))
          ?q <- (object (is-a has-comment&~has-title)
                        (comment nil))
          =>
-         (format t "VIOLATION: %s with no title does not contain a comment!%n"
-                 (class ?q)))
+         (violation ?*current-router* (class ?q) " with no title does nto contain a comment!" crlf))
 
