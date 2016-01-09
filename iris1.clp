@@ -20,4 +20,12 @@
 	 (printout werror "ERROR: function " ?title " contains a rest parameter, not supported!" crlf)
 	 (exit 1))
 
-
+(defrule associate-inputs-with-registers
+	 (stage (current build))
+	 (object (is-a deffunction)
+		 (arguments $?ind ?arg $?))
+	 ?q <- (object (is-a singlefield-variable)
+		       (name ?arg)
+		       (register UNKNOWN))
+	 =>
+	 (modify-instance ?q (register (sym-cat i (length$ ?ind)))))

@@ -11,3 +11,4 @@
 (batch* defmethod.clp)
 (batch* defmodule.clp)
 (batch* bind.clp)
+(batch* iris1.clp)
