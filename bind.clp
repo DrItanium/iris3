@@ -58,7 +58,7 @@
                           (local-binds $?lb)
                           (arguments $?args))
          (test (and (not (neq ?function 
-                              (send ?bind get-parent-chain)))
+			      (expand$ (send ?bind get-parent-chain))))
                     (neq ?var $?lb)
                     (neq ?var $?args)))
          =>
