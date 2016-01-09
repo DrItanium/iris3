@@ -8,4 +8,16 @@
 	 (printout werror "ERROR: function " ?title " has more than 32 arguments!" crlf)
 	 (exit 1))
 
+(defrule inspect-deffunction:no-rest-argument
+	 "currently we don't support the rest param in a deffunction"
+	 (stage (current build))
+	 (object (is-a deffunction)
+		 (arguments $? ?last)
+		 (function-name ?title))
+	 (object (is-a multifield-variable)
+		 (name ?last))
+	 =>
+	 (printout werror "ERROR: function " ?title " contains a rest parameter, not supported!" crlf)
+	 (exit 1))
+
 
