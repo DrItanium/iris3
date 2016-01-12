@@ -232,4 +232,183 @@
 			(index ?index)
 			(multifield ?field)
 			(parent ?parent)))
+(defclass build
+  (is-a thing)
+  (slot statement
+	(visibility public)
+	(storage local)
+	(default ?NONE)))
+(defrule build-build-statement
+	 (stage (current build))
+	 ?f <- (object (is-a list)
+		       (contents build ?statement)
+		       (name ?name)
+		       (parent ?parent))
+	 =>
+	 (unmake-instance ?f)
+	 (make-instance ?name of build
+			(statement ?statement)
+			(parent ?parent)))
 
+(defclass format
+  (is-a thing)
+  (slot router
+	(type SYMBOL)
+	(storage local)
+	(visibility public)
+	(default ?NONE))
+  (slot format-string
+	(type SYMBOL)
+	(storage local)
+	(visibility public)
+	(default ?NONE))
+  (multislot arguments
+	     (storage local)
+	     (visibility public)))
+(defrule build-format-statement
+	 (stage (current build))
+	 ?f <- (object (is-a list)
+		       (contents format ?router ?fmt $?rest)
+		       (name ?name)
+		       (parent ?parent))
+	 =>
+	 (unmake-instance ?f)
+	 (make-instance ?name of format
+			(parent ?parent)
+			(format-string ?fmt)
+			(router ?router)
+			(arguments ?rest)))
+(defclass create$
+  (is-a thing)
+  (multislot contents
+	     (visibility public)
+	     (storage local)))
+(defrule build-create$-statement
+	 (stage (current build))
+	 ?f <- (object (is-a list)
+		       (contents create$ $?rest)
+		       (name ?name)
+		       (parent ?parent))
+	 =>
+	 (unmake-instance ?f)
+	 (make-instance ?name of create$
+			(parent ?parent)
+			(contents ?rest)))
+
+(defclass not
+  (is-a thing)
+  (slot statement
+	(visibility public)
+	(storage local)))
+
+	
+(defrule build-not-statement
+	 (stage (current build))
+	 ?f <- (object (is-a list)
+		       (contents not ?stmt)
+		       (name ?name)
+		       (parent ?parent))
+	 =>
+	 (unmake-instance ?f)
+	 (make-instance ?name of not
+			(parent ?parent)
+			(statement ?stmt)))
+
+(defclass neq
+  (is-a thing)
+  (slot first
+	(visibility public)
+	(storage local)
+	(default ?NONE))
+  (multislot rest
+	     (visibility public)
+	     (storage local)))
+
+(defrule build-neq-statement
+	 (stage (current build))
+	 ?f <- (object (is-a list)
+		       (contents neq ?first $?rest)
+		       (name ?name)
+		       (parent ?parent))
+	 =>
+	 (unmake-instance ?f)
+	 (make-instance ?name of neq
+			(parent ?parent)
+			(first ?first)
+			(rest $?rest)))
+
+(defclass deffacts
+  (is-a thing)
+  (slot title
+	(visibility public)
+	(storage local)
+	(default ?NONE))
+  (multislot facts
+	     (visibility public)
+	     (storage local)
+	     (default ?NONE)))
+(defrule build-deffacts-target
+	 (stage (current build))
+	 ?f <- (object (is-a list)
+		       (contents deffacts ?title $?rest)
+		       (name ?name)
+		       (parent ?parent))
+	 =>
+	 (unmake-instance ?f)
+	 (make-instance ?name of deffacts
+			(parent ?parent)
+			(title ?title)
+			(facts ?rest)))
+
+(defclass definstances
+  (is-a thing)
+  (slot title
+	(visibility public)
+	(storage local)
+	(default ?NONE))
+  (multislot instances
+	     (visibility public)
+	     (storage local)
+	     (default ?NONE)))
+(defrule build-definstances-target
+	 (stage (current build))
+	 ?f <- (object (is-a list)
+		       (contents definstances ?title $?rest)
+		       (name ?name)
+		       (parent ?parent))
+	 =>
+	 (unmake-instance ?f)
+	 (make-instance ?name of definstances
+			(parent ?parent)
+			(title ?title)
+			(instances ?rest)))
+
+(defclass definstance-instance
+  (is-a thing)
+  (slot title
+	(visibility public)
+	(storage local)
+	(default ?NONE))
+  (slot type
+	(visibility public)
+	(storage local)
+	(default ?NONE))
+  (multislot slots
+	     (visibility public)
+	     (storage local)))
+
+(defrule build-definstances-instance-target
+	 (stage (current build))
+	 ?f <- (object (is-a list)
+		       (contents ?title of ?type $?slots)
+		       (name ?name)
+		       (parent ?definstances))
+	 (object (is-a definstances)
+		 (name ?definstances))
+	 =>
+	 (unmake-instance ?f)
+	 (make-instance ?name of definstance-instance
+			(parent ?definstances)
+			(title ?title)
+			(type ?type)
+			(slots ?slots)))
