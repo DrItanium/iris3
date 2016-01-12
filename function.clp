@@ -228,7 +228,7 @@
          (make-instance ?id of defmessage-handler
                         (parent ?parent)
                         (target-class ?class-id)
-                        (message-name ?message-name)
+                        (function-name ?message-name)
                         (arguments ?params)
                         (body ?actions)))
 
