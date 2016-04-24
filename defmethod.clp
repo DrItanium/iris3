@@ -34,10 +34,9 @@
             "returns true if all the elements in a list are symbols")
 (defmethod all-symbolsp
   ((?list MULTIFIELD))
-  (bind ?result (filter$ symbolp
-                         ?list))
   (= (length$ ?list)
-     (length$ ?result)))
+     (length$ (filter$ symbolp
+               ?list))))
 (defmethod all-symbolsp
   ($?list)
   (all-symbolsp ?list))
