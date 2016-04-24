@@ -3,4 +3,5 @@
 (reset)
 (run)
 (profile off)
+(set-profile-percent-threshold 0.1)
 (profile-info)
