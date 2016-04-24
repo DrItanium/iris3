@@ -16,7 +16,7 @@
 ;    misrepresented as being the original software.
 ; 3. This notice may not be removed or altered from any source distribution.
 (defclass default-facet
-  (is-a thing)
+  (is-a node)
   (role abstract)
   (pattern-match non-reactive)
   (multislot expressions))
@@ -39,7 +39,7 @@
   (role concrete)
   (pattern-match reactive))
 (defclass basic-slot
-  (is-a thing)
+  (is-a node)
   (role abstract)
   (pattern-match non-reactive)
   (slot slot-name

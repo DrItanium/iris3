@@ -17,13 +17,13 @@
 ; 3. This notice may not be removed or altered from any source distribution.
 
 (defclass match
-  (is-a thing)
+  (is-a node)
   (slot binding
         (type LEXEME
               INSTANCE-NAME))
   (multislot contents))
 (defclass defrule
-  (is-a thing
+  (is-a node
         has-comment)
   (slot rule-name
         (type SYMBOL)
@@ -44,7 +44,7 @@
 
 (defclass defrule-declaration
   "Used as a layer of indirection for salience and auto-focus fields"
-  (is-a thing)
+  (is-a node)
   (slot salience 
         (type INTEGER
               INSTANCE-NAME)
@@ -236,7 +236,7 @@
          (object (is-a defrule)
                  (name ?name)
                  (auto-focus ?focus))
-         ?f2 <- (object (is-a thing)
+         ?f2 <- (object (is-a node)
                         (name ?focus)
                         (parent ~?name))
          =>
@@ -247,7 +247,7 @@
          (object (is-a defrule)
                  (name ?name)
                  (salience ?salience))
-         ?f2 <- (object (is-a thing)
+         ?f2 <- (object (is-a node)
                         (name ?salience)
                         (parent ~?name))
          =>

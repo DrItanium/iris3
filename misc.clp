@@ -20,7 +20,7 @@
              (?op)
              (build (format nil 
                             "(defclass %s 
-                               (is-a thing)
+                               (is-a node)
                                (slot argument
                                      (visibility public)
                                      (storage local)
@@ -45,7 +45,7 @@
              (?op)
              (build (format nil 
                             "(defclass %s 
-                               (is-a thing)
+                               (is-a node)
                                (multislot arguments 
                                           (visibility public)
                                           (storage local)

@@ -23,7 +23,7 @@
 
 (defclass defmethod-argument
   "An argument in a defmethod"
-  (is-a thing)
+  (is-a node)
   (slot argument-name
         (type INSTANCE-NAME)
         (default ?NONE))

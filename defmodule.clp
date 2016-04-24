@@ -17,7 +17,7 @@
 ; 3. This notice may not be removed or altered from any source distribution.
 
 (defclass defmodule
-  (is-a thing
+  (is-a node
         has-comment)
   (multislot specifications))
 ; TODO: flesh out further
@@ -55,7 +55,7 @@
 
 
 (defclass port-specification
-  (is-a thing)
+  (is-a node)
   (role abstract)
   (pattern-match non-reactive)
   (slot construct

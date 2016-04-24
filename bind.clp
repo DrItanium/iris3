@@ -19,7 +19,7 @@
 ; bind operations
 
 (defclass bind
-  (is-a thing)
+  (is-a node)
   (slot variable
         (type INSTANCE)
         (default ?NONE))

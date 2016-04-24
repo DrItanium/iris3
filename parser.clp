@@ -62,7 +62,7 @@
                     "Returns the an empty multifield as this object has no parents!"
                     ()
                     (create$))
-(defclass thing
+(defclass node
   (is-a USER)
   (slot parent 
         (type SYMBOL
@@ -70,7 +70,7 @@
         (default ?NONE))
   (message-handler part-of-a primary)
   (message-handler get-parent-chain primary))
-(defmessage-handler thing part-of-a
+(defmessage-handler node part-of-a
                     "Checks to see if the current object or one of its parents are of a given type"
                     (?type)
                     (if (eq (class ?self)
@@ -79,8 +79,8 @@
                       else
                       (send ?self:parent 
                             part-of-a ?type)))
-(defmessage-handler thing get-parent-chain primary
-                    "Construct a chain of all the parents of this thing"
+(defmessage-handler node get-parent-chain primary
+                    "Construct a chain of all the parents of this node"
                     ()
                     (create$ ?self:parent (send ?self:parent get-parent-chain)))
 
@@ -106,20 +106,20 @@
 
 (defclass exec-fragment 
   "An amalgamation of several different types"
-  (is-a thing
+  (is-a node
         has-body
         has-local-binds
         has-arguments))
 
 
-(defclass composite-thing
-  "A thing that is made up of other things. This is separate from a list!"
-  (is-a thing)
+(defclass composite-node
+  "A node that is made up of other nodes. This is separate from a list!"
+  (is-a node)
   (multislot contents
              (visibility public)
              (default ?NONE)))
-(defclass scalar-thing
-  (is-a thing)
+(defclass scalar-node
+  (is-a node)
   (slot value
         (visibility public)
         (default ?NONE)))
@@ -131,20 +131,20 @@
   (instance-name (make-instance of ?class 
                                 (parent ?parent)
                                 (value ?value))))
-(defclass typed-scalar-thing
-  (is-a scalar-thing)
+(defclass typed-scalar-node
+  (is-a scalar-node)
   (slot type
         (type SYMBOL)
         (default ?NONE)))
 
 (defclass string
   "Strings need to be wrapped in their own nodes"
-  (is-a scalar-thing)
+  (is-a scalar-node)
   (slot value
         (type STRING)
         (source composite)
         (storage local)))
-(defclass variable (is-a scalar-thing))
+(defclass variable (is-a scalar-node))
 (defclass global-variable (is-a variable))
 (defclass singlefield-global-variable (is-a global-variable))
 (defclass multifield-global-variable (is-a global-variable))
@@ -153,12 +153,12 @@
 (defclass multifield-variable (is-a local-variable))
 (defclass singlefield-variable (is-a local-variable))
 
-(defclass constraint (is-a scalar-thing))
+(defclass constraint (is-a scalar-node))
 (defclass not-constraint (is-a constraint))
 (defclass and-constraint (is-a constraint))
 (defclass or-constraint (is-a constraint))
 
-(defclass wildcard (is-a scalar-thing))
+(defclass wildcard (is-a scalar-node))
 (defclass multifield-wildcard (is-a wildcard))
 (defclass singlefield-wildcard (is-a wildcard))
 
@@ -273,13 +273,13 @@
 
 
 (defclass list
-  (is-a thing)
+  (is-a node)
   (multislot contents
              (visibility public)))
 
 (defclass reference
   "An indirect reference to something else, useful for deffunctions and arguments"
-  (is-a scalar-thing)
+  (is-a scalar-node)
   (slot expand
         (type SYMBOL)
         (allowed-symbols FALSE TRUE)))
@@ -356,7 +356,8 @@
 (defrule parse-special-element
          (declare (salience 1))
          (stage (current lex))
-         ?f <- (lexer (elements ?type ?value)
+         ?f <- (lexer (elements ?type 
+                                ?value)
                       (top ?top))
          ?f2 <- (object (is-a list)
                         (name ?top)
@@ -390,12 +391,13 @@
          (stage (current lex))
          ?f <- (lexer (elements ?value&:(stringp ?value))
                       (top ?top))
-         ?f2 <- (object (is-a list)
-                        (name ?top)
-                        (contents $?contents))
+         (object (is-a list)
+                 (name ?top)
+                 (contents $?contents))
          =>
-         (modify ?f (elements))
-         (modify-instance ?f2 
+         (modify ?f 
+                 (elements))
+         (modify-instance ?top
                           (contents $?contents 
                                     (construct-instance string
                                                         ?top
@@ -442,7 +444,7 @@
                  ?value)
          (modify ?f 
                  (elements))
-         (make-instance of typed-scalar-thing
+         (make-instance of typed-scalar-node
                         (parent ?top)
                         (type (class ?value))
                         (value ?value)))

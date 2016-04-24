@@ -17,12 +17,12 @@
 ; 3. This notice may not be removed or altered from any source distribution.
 
 (defclass defglobal
-  (is-a thing)
+  (is-a node)
   (slot module 
         (type SYMBOL))
   (multislot assignments))
 (defclass defglobal-assignment
-  (is-a thing)
+  (is-a node)
   (slot variable 
         (type INSTANCE)
         (allowed-classes variable)
@@ -69,7 +69,7 @@
          ?f2 <- (object (is-a global-variable)
                         (name ?var)
                         (parent ?parent))
-         ?f3 <- (object (is-a thing)
+         ?f3 <- (object (is-a node)
                         (name ?value)
                         (parent ?parent))
          =>

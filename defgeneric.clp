@@ -17,7 +17,7 @@
 ; 3. This notice may not be removed or altered from any source distribution.
 
 (defclass defgeneric
-  (is-a thing
+  (is-a node
         has-comment)
   (slot generic-name
         (type SYMBOL)

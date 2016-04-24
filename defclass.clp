@@ -16,7 +16,7 @@
 ;    misrepresented as being the original software.
 ; 3. This notice may not be removed or altered from any source distribution.
 (defclass message-handler-documentation
-  (is-a thing)
+  (is-a node)
   (slot handler-name
         (type SYMBOL)
         (default ?NONE))
@@ -27,7 +27,7 @@
                          before 
                          after)))
 (defclass defclass
-  (is-a thing
+  (is-a node
         has-comment)
   (slot class-name
         (type SYMBOL)
