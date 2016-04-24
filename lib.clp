@@ -26,10 +26,6 @@
             "Apply a function to each member of a list and return the result")
 (defgeneric filter$
             "Fliter elements out of a list and return a new list with the results")
-(defgeneric hex-to-number
-            "Converts a hexidecimal number to its decimal representation")
-(defgeneric hexchar-to-number
-            "Converts a hexidecimal character to its decimal representation")
 (defgeneric exists$
             "Checks to see if a given predicate function returns true for at least one element in a list")
 (defmethod apply$
@@ -64,42 +60,6 @@
   ((?fn SYMBOL)
    $?list)
   (filter$ ?fn ?list))
-(defmethod hexchar-to-number
-  ((?char STRING))
-  (bind ?field (string-to-field (lowcase ?char)))
-  (return 
-    (if (numberp ?field) then
-      ?field
-      else
-      (if (symbolp ?field) then
-        (switch ?field
-                (case a then 10)
-                (case b then 11)
-                (case c then 12)
-                (case d then 13)
-                (case e then 14)
-                (case f then 15)
-                (default FALSE))
-        else
-        FALSE))))
-(defmethod hex-to-number
-  ((?a SYMBOL))
-  (bind ?result 0)
-  ; strip off the first two characters
-  (bind ?strip (sub-string 3 (length$ ?a) ?a))
-  (bind ?len (length$ ?strip))
-  ; Now go through and build up the number by extracting the current char
-  ; converting it and then shifting left by the position of the digit in the
-  ; original "number"
-  (loop-for-count (?ind 1 ?len) do
-                  (bind ?result 
-                        (+ ?result 
-                           (left-shift 
-                             (hexchar-to-number (sub-string ?ind 
-                                                            ?ind 
-                                                            ?strip))
-                             (* (- ?len ?ind) 4)))))
-  (return ?result))
 
 (defmethod exists$
   ((?fn SYMBOL)
