@@ -28,11 +28,13 @@
          ?f <- (object (is-a list)
                        (contents defgeneric
                                  ?gen-name)
+                       (index ?index)
                        (parent ?parent)
                        (name ?name))
          =>
          (unmake-instance ?f)
          (make-instance ?name of defgeneric 
+                       (index ?index)
                         (generic-name ?gen-name)
                         (parent ?parent)))
 (defrule translate-defgeneric:comment
@@ -41,6 +43,7 @@
                        (contents defgeneric
                                  ?gen-name
                                  ?comment)
+                       (index ?index)
                        (parent ?parent)
                        (name ?name))
          ?f2 <- (object (is-a string)
@@ -49,6 +52,7 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defgeneric 
+                       (index ?index)
                         (generic-name ?gen-name)
                         (comment ?cvalue)
                         (parent ?parent)))

@@ -32,10 +32,12 @@
                                ?f <- (object (is-a list)
                                              (contents %s ?arg)
                                              (name ?name)
+                                             (index ?index)
                                              (parent ?parent))
                                =>
                                (unmake-instance ?f)
                                (make-instance ?name of %s
+                                              (index ?index)
                                               (argument ?arg)
                                               (parent ?parent)))%n%n"
                      ?op
@@ -57,10 +59,12 @@
                                ?f <- (object (is-a list)
                                              (contents %s $?rest)
                                              (name ?name)
+                                             (index ?index)
                                              (parent ?parent))
                                =>
                                (unmake-instance ?f)
                                (make-instance ?name of %s
+                                              (index ?index)
                                               (arguments ?rest)
                                               (parent ?parent)))%n%n"
                      ?op
