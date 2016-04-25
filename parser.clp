@@ -212,23 +212,20 @@
          (stage (current lex))
          ?f <- (object (is-a file)
                        (elements LPAREN ?)
-                       (top ?top $?rest)
+                       (top ?top $?)
                        (router ?r))
          (object (is-a list)
-                 (name ?top)
-                 (contents $?contents))
+                 (name ?top))
          =>
-         (slot-insert$ ?top
-                       contents
-                       (+ (length$ ?contents) 1)
-                       (bind ?z
-                             (make-instance of list
-                                            (parent ?top))))
-         (modify-instance ?f
-                          (top ?z 
-                               ?top 
-                               ?rest)
-                          (elements (next-token ?r))))
+         (slot-insert$ ?f
+                       top
+                       1
+                       (make-instance of list
+                                      (parent ?top)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r)))
 
 (defrule end-list
          (declare (salience 3))
@@ -236,13 +233,35 @@
          ?f <- (object (is-a file)
                        (elements RPAREN ?)
                        (router ?r)
-                       (top ? $?rest))
+                       (top ?curr ?parent $?rest))
+         (object (is-a list)
+                 (name ?parent)
+                 (contents $?contents))
          =>
+         (slot-insert$ ?parent
+                       contents
+                       (+ (length$ ?contents) 1)
+                       ?curr)
          (modify-instance ?f 
                           (elements (next-token ?r))
-                          (top ?rest)))
-
-
+                          (top ?parent
+                               ?rest)))
+(defrule end-list:top-level
+         (declare (salience 3))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements RPAREN ?)
+                       (router ?r)
+                       (top ? ?parent)
+                       (name ?parent))
+         =>
+         (slot-delete$ ?f
+                       top 
+                       1 1)
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r)))
 
 
 (defrule parse-special-element
