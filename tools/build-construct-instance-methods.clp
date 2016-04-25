@@ -15,13 +15,16 @@
                                        (name ?top)
                                        (contents $?contents))
                                =>
-                               (modify-instance ?top
-                                                (contents ?contents
-                                                          (make-instance of %s
-                                                                         (parent ?top)
-                                                                         (value ?value))))
-                               (modify-instance ?f 
-                                                (elements (next-token ?r))))%n%n
+                               (slot-insert$ ?top
+                                             contents
+                                             (+ (length$ ?contents) 1)
+                                             (make-instance of %s
+                                                            (parent ?top)
+                                                            (value ?value)))
+                               (slot-replace$ ?f
+                                              elements
+                                              1 2
+                                              (next-token ?r)))%n%n
                      (defrule construct-special-instance-outside-list:%s
                               \"convert a symbol of type %s to class of type %s\"
                               (declare (salience 2))
@@ -35,8 +38,10 @@
                               =>
                               (printout werror
                                         \"WARNING: Found a special tag outside a list!\" crlf)
-                              (modify-instance ?f
-                                               (elements (next-token ?r)))
+                              (slot-replace$ ?f
+                                             elements
+                                             1 2
+                                             (next-token ?r))
                               (make-instance of %s
                                              (parent ?file)
                                              (value ?value)))%n%n"

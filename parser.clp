@@ -197,11 +197,16 @@
                  (name ?file)
                  (router ?router))
          =>
-         (modify-instance ?file 
-                          (top (make-instance of list
-                                              (parent ?file)) 
-                               ?file)
-                          (elements (next-token ?router))))
+         (slot-insert$ ?file 
+                       top
+                       1
+                       (make-instance of list 
+                                      (parent ?file)))
+         (slot-replace$ ?file
+                        elements
+                        1 2
+                        (next-token ?router)))
+
 (defrule new-list
          (declare (salience 3))
          (stage (current lex))
@@ -213,21 +218,17 @@
                  (name ?top)
                  (contents $?contents))
          =>
-         (bind ?z 
-               (make-instance of list
-                              (parent ?top)))
          (slot-insert$ ?top
                        contents
                        (+ (length$ ?contents) 1)
-                       ?z)
-         (slot-insert$ ?f
-                       top
-                       1
-                       ?z)
-         (slot-replace$ ?f
-                        elements
-                        1 2
-                        (next-token ?r)))
+                       (bind ?z
+                             (make-instance of list
+                                            (parent ?top))))
+         (modify-instance ?f
+                          (top ?z 
+                               ?top 
+                               ?rest)
+                          (elements (next-token ?r))))
 
 (defrule end-list
          (declare (salience 3))
@@ -294,11 +295,12 @@
          =>
          (modify-instance ?f
                           (elements (next-token ?r)))
-         (modify-instance ?top 
-                          (contents ?contents
-                                    (make-instance of string
-                                                   (parent ?top)
-                                                   (value ?value)))))
+         (slot-insert$ ?top
+                       contents
+                       (+ (length$ ?contents) 1)
+                       (make-instance of string
+                                      (parent ?top)
+                                      (value ?value))))
 
 (defrule parse-string-outside-list
          (declare (salience 2))
@@ -329,11 +331,14 @@
                  (contents $?contents))
 
          =>
-         (modify-instance ?top
-                          (contents ?contents
-                                    ?value))
-         (modify-instance ?f
-                          (elements (next-token ?r))))
+         (slot-insert$ ?top
+                       contents
+                       (+ (length$ ?contents) 1)
+                       ?value)
+         (slot-replace$ ?f
+                        elements
+                        1 1
+                        (next-token ?r)))
 
 
 (defrule warn:parse-normal-element-outside-list
@@ -426,13 +431,16 @@
                  (name ?top)
                  (contents $?contents))
          =>
-         (modify-instance ?top
-                          (contents ?contents
-                                    (make-instance of or-constraint
-                                                   (parent ?top)
-                                                   (value ?value))))
-         (modify-instance ?f 
-                          (elements (next-token ?r))))
+         (slot-insert$ ?top
+                       contents
+                       (+ (length$ ?contents) 1)
+                       (make-instance of or-constraint
+                                      (parent ?top)
+                                      (value ?value)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r)))
 
 
 (defrule construct-special-instance-outside-list:or-constraint
@@ -448,8 +456,10 @@
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
-         (modify-instance ?f
-                          (elements (next-token ?r)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r))
          (make-instance of or-constraint
                         (parent ?file)
                         (value ?value)))
@@ -468,13 +478,16 @@
                  (name ?top)
                  (contents $?contents))
          =>
-         (modify-instance ?top
-                          (contents ?contents
-                                    (make-instance of and-constraint
-                                                   (parent ?top)
-                                                   (value ?value))))
-         (modify-instance ?f 
-                          (elements (next-token ?r))))
+         (slot-insert$ ?top
+                       contents
+                       (+ (length$ ?contents) 1)
+                       (make-instance of and-constraint
+                                      (parent ?top)
+                                      (value ?value)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r)))
 
 
 (defrule construct-special-instance-outside-list:and-constraint
@@ -490,8 +503,10 @@
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
-         (modify-instance ?f
-                          (elements (next-token ?r)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r))
          (make-instance of and-constraint
                         (parent ?file)
                         (value ?value)))
@@ -510,13 +525,16 @@
                  (name ?top)
                  (contents $?contents))
          =>
-         (modify-instance ?top
-                          (contents ?contents
-                                    (make-instance of not-constraint
-                                                   (parent ?top)
-                                                   (value ?value))))
-         (modify-instance ?f 
-                          (elements (next-token ?r))))
+         (slot-insert$ ?top
+                       contents
+                       (+ (length$ ?contents) 1)
+                       (make-instance of not-constraint
+                                      (parent ?top)
+                                      (value ?value)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r)))
 
 
 (defrule construct-special-instance-outside-list:not-constraint
@@ -532,8 +550,10 @@
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
-         (modify-instance ?f
-                          (elements (next-token ?r)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r))
          (make-instance of not-constraint
                         (parent ?file)
                         (value ?value)))
@@ -552,13 +572,16 @@
                  (name ?top)
                  (contents $?contents))
          =>
-         (modify-instance ?top
-                          (contents ?contents
-                                    (make-instance of multifield-wildcard
-                                                   (parent ?top)
-                                                   (value ?value))))
-         (modify-instance ?f 
-                          (elements (next-token ?r))))
+         (slot-insert$ ?top
+                       contents
+                       (+ (length$ ?contents) 1)
+                       (make-instance of multifield-wildcard
+                                      (parent ?top)
+                                      (value ?value)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r)))
 
 
 (defrule construct-special-instance-outside-list:multifield-wildcard
@@ -574,8 +597,10 @@
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
-         (modify-instance ?f
-                          (elements (next-token ?r)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r))
          (make-instance of multifield-wildcard
                         (parent ?file)
                         (value ?value)))
@@ -594,13 +619,16 @@
                  (name ?top)
                  (contents $?contents))
          =>
-         (modify-instance ?top
-                          (contents ?contents
-                                    (make-instance of singlefield-wildcard
-                                                   (parent ?top)
-                                                   (value ?value))))
-         (modify-instance ?f 
-                          (elements (next-token ?r))))
+         (slot-insert$ ?top
+                       contents
+                       (+ (length$ ?contents) 1)
+                       (make-instance of singlefield-wildcard
+                                      (parent ?top)
+                                      (value ?value)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r)))
 
 
 (defrule construct-special-instance-outside-list:singlefield-wildcard
@@ -616,8 +644,10 @@
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
-         (modify-instance ?f
-                          (elements (next-token ?r)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r))
          (make-instance of singlefield-wildcard
                         (parent ?file)
                         (value ?value)))
@@ -636,13 +666,16 @@
                  (name ?top)
                  (contents $?contents))
          =>
-         (modify-instance ?top
-                          (contents ?contents
-                                    (make-instance of multifield-variable
-                                                   (parent ?top)
-                                                   (value ?value))))
-         (modify-instance ?f 
-                          (elements (next-token ?r))))
+         (slot-insert$ ?top
+                       contents
+                       (+ (length$ ?contents) 1)
+                       (make-instance of multifield-variable
+                                      (parent ?top)
+                                      (value ?value)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r)))
 
 
 (defrule construct-special-instance-outside-list:multifield-variable
@@ -658,8 +691,10 @@
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
-         (modify-instance ?f
-                          (elements (next-token ?r)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r))
          (make-instance of multifield-variable
                         (parent ?file)
                         (value ?value)))
@@ -678,13 +713,16 @@
                  (name ?top)
                  (contents $?contents))
          =>
-         (modify-instance ?top
-                          (contents ?contents
-                                    (make-instance of singlefield-variable
-                                                   (parent ?top)
-                                                   (value ?value))))
-         (modify-instance ?f 
-                          (elements (next-token ?r))))
+         (slot-insert$ ?top
+                       contents
+                       (+ (length$ ?contents) 1)
+                       (make-instance of singlefield-variable
+                                      (parent ?top)
+                                      (value ?value)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r)))
 
 
 (defrule construct-special-instance-outside-list:singlefield-variable
@@ -700,8 +738,10 @@
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
-         (modify-instance ?f
-                          (elements (next-token ?r)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r))
          (make-instance of singlefield-variable
                         (parent ?file)
                         (value ?value)))
@@ -720,13 +760,16 @@
                  (name ?top)
                  (contents $?contents))
          =>
-         (modify-instance ?top
-                          (contents ?contents
-                                    (make-instance of multifield-global-variable
-                                                   (parent ?top)
-                                                   (value ?value))))
-         (modify-instance ?f 
-                          (elements (next-token ?r))))
+         (slot-insert$ ?top
+                       contents
+                       (+ (length$ ?contents) 1)
+                       (make-instance of multifield-global-variable
+                                      (parent ?top)
+                                      (value ?value)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r)))
 
 
 (defrule construct-special-instance-outside-list:multifield-global-variable
@@ -742,8 +785,10 @@
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
-         (modify-instance ?f
-                          (elements (next-token ?r)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r))
          (make-instance of multifield-global-variable
                         (parent ?file)
                         (value ?value)))
@@ -762,13 +807,16 @@
                  (name ?top)
                  (contents $?contents))
          =>
-         (modify-instance ?top
-                          (contents ?contents
-                                    (make-instance of singlefield-global-variable
-                                                   (parent ?top)
-                                                   (value ?value))))
-         (modify-instance ?f 
-                          (elements (next-token ?r))))
+         (slot-insert$ ?top
+                       contents
+                       (+ (length$ ?contents) 1)
+                       (make-instance of singlefield-global-variable
+                                      (parent ?top)
+                                      (value ?value)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r)))
 
 
 (defrule construct-special-instance-outside-list:singlefield-global-variable
@@ -784,8 +832,10 @@
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
-         (modify-instance ?f
-                          (elements (next-token ?r)))
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r))
          (make-instance of singlefield-global-variable
                         (parent ?file)
                         (value ?value)))
