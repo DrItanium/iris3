@@ -234,28 +234,27 @@
 
 (deffunction strip-singlefield
              (?element)
-             (if (and (instance-namep ?element)
-                      (eq (class ?element)
-                          singlefield-variable)) then 
+             (if (eq (class ?element)
+                     singlefield-variable) then
                ?element 
                else 
                (create$)))
 
-(deffunction only-single-fields
-             (?list)
-             (= (length$ ?list)
-                (length$ (apply$ strip-singlefield
-                                 ?list))))
 (deffunction wildcardp
              (?element)
-             (and (instance-namep ?element)
-                  (eq (class ?element)
-                      multifield-variable)))
+             (eq (class ?element)
+                 multifield-variable))
 
 (deffunction has-wildcard-parameter
              (?list)
-             (exists$ wildcardp
-                      ?list))
+             (exists wildcardp
+                     (expand$ ?list)))
+
+(deffunction only-single-fields
+             (?list)
+             (not-exists wildcardp
+                         (expand$ ?list)))
+
 
 (defrule error:convert-function-arguments:multiple-wildcards
          (stage (current parse))

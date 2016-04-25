@@ -159,7 +159,8 @@
          ?f <- (object (is-a list)
                        (contents defrule
                                  ?rule-name
-                                 $?matches&:(no-strings-in-list ?matches)
+                                 ?match&:(not (string-classp ?match))
+                                 $?matches
                                  =>
                                  $?body)
                        (parent ?parent)
@@ -169,7 +170,8 @@
          (make-instance ?name of defrule
                         (rule-name ?rule-name)
                         (parent ?parent)
-                        (matches ?matches)
+                        (matches ?match 
+                                 ?matches)
                         (body ?body)))
 
 (defrule translate-defrule:comment:decl
@@ -210,7 +212,7 @@
                        (contents defrule
                                  ?rule-name
                                  ?decl
-                                 $?matches&:(no-strings-in-list ?matches)
+                                 $?matches
                                  =>
                                  $?body)
                        (parent ?parent)
@@ -258,11 +260,11 @@
          ?f <- (object (is-a defrule)
                        (name ?parent)
                        (matches $?before ?list $?after))
-         ?q <- (object (is-a list)
-                       (name ?list)
-                       (contents $?contents))
+         (object (is-a list)
+                 (name ?list)
+                 (contents $?contents))
          =>
-         (unmake-instance ?q)
+         (unmake-instance ?list)
          (make-instance ?list of match
                         (parent ?parent)
                         (contents ?contents)))

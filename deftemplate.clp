@@ -29,7 +29,7 @@
          ?f <- (object (is-a list)
                        (contents deftemplate
                                  ?template-name 
-                                 ?comment
+                                 ?comment&:(string-classp ?comment)
                                  $?slots)
                        (parent ?parent)
                        (name ?name))
@@ -49,13 +49,15 @@
          ?f <- (object (is-a list)
                        (contents deftemplate
                                  ?template-name 
-                                 $?slots&:(no-strings-in-list ?slots))
+                                 ?slot&:(not (string-classp ?slot))
+                                 $?slots)
                        (parent ?parent)
                        (name ?name))
          =>
          (unmake-instance ?f)
          (make-instance ?name of deftemplate
-          (template-name ?template-name)
+                        (template-name ?template-name)
                         (parent ?parent)
-                        (slots $?slots)))
+                        (slots ?slot 
+                               $?slots)))
 

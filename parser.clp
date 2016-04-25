@@ -21,22 +21,23 @@
             "checks to see if the given list is free of primitive strings")
 (deffunction string-classp
              (?value)
-             (and (instance-namep ?value)
-                  (eq (class ?value) string)))
+             (eq (class ?value)
+                 string))
 (defmethod no-primitive-strings-in-list
   ((?list MULTIFIELD))
-  (not (exists$ stringp
-                ?list)))
+  (not-exists stringp
+              (expand$ ?list)))
 (defmethod no-primitive-strings-in-list
   ($?list)
   (no-primitive-strings-in-list ?list))
 (defmethod no-strings-in-list
   ((?list MULTIFIELD))
-  (not (exists$ string-classp
-                ?list)))
+  (not-exists string-classp
+              (expand$ ?list)))
 (defmethod no-strings-in-list
   ($?list)
-  (no-strings-in-list ?list))
+  (not-exists string-classp
+              $?list))
 
 (deftemplate lexer
              (slot file
