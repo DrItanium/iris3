@@ -150,7 +150,8 @@
                         (parent ?aparent)
                         (contents $?contents))
          =>
-         (unmake-instance ?f ?f2)
+         (unmake-instance ?f 
+                          ?f2)
          (progn$ (?a ?contents) 
                  (send ?a put-parent ?id))
          (make-instance ?id of defmethod
@@ -174,20 +175,18 @@
                                   ?type&:(symbolp ?type)
                                   $?types&:(all-symbolsp ?types)
                                   ?query))
-         ?f3 <- (object (is-a multifield-variable)
-                        (name ?mname))
-         ?f4 <- (object (is-a list|global-variable)
-                        (name ?query))
+         (object (is-a multifield-variable)
+                 (name ?mname))
+         (object (is-a list|global-variable)
+                 (name ?query))
          =>
          (unmake-instance ?f2)
-         (bind ?name (instance-name (make-instance ?last of defmethod-argument
-                                                   (index ?index)
-                                                   (argument-name ?mname)
-                                                   (parent ?args)
-                                                   (types ?type ?types)
-                                                   (query ?query))))
-         (modify-instance ?f3 (parent ?name))
-         (modify-instance ?f4 (parent ?name)))
+         (make-instance ?last of defmethod-argument
+                        (index ?index)
+                        (argument-name ?mname)
+                        (parent ?args)
+                        (types ?type ?types)
+                        (query ?query)))
 
 (defrule build:defmethod-argument:wildcard-parameter:nested-list:types-only
          (stage (current parse))
@@ -200,16 +199,16 @@
                         (contents ?mname
                                   ?type&:(symbolp ?type)
                                   $?types&:(all-symbolsp ?types)))
-         ?f3 <- (object (is-a multifield-variable)
-                        (name ?mname))
+         (object (is-a multifield-variable)
+                 (name ?mname))
          =>
          (unmake-instance ?f2)
-         (modify-instance ?f3 
-                          (parent (instance-name (make-instance ?last of defmethod-argument
-                                                                (index ?index)
-                                                                (argument-name ?mname)
-                                                                (parent ?args)
-                                                                (types ?type ?types))))))
+         (make-instance ?last of defmethod-argument
+                        (index ?index)
+                        (argument-name ?mname)
+                        (parent ?args)
+                        (types ?type 
+                               ?types)))
 
 
 (defrule build:defmethod-argument:wildcard-parameter:nested-list:query
@@ -222,19 +221,17 @@
                         (index ?index)
                         (contents ?mname
                                   ?query))
-         ?f4 <- (object (is-a multifield-variable)
-                        (name ?mname))
-         ?f3 <- (object (is-a list|global-variable)
-                        (name ?query))
+         (object (is-a multifield-variable)
+                 (name ?mname))
+         (object (is-a list|global-variable)
+                 (name ?query))
          =>
          (unmake-instance ?f2)
-         (bind ?name (instance-name (make-instance ?last of defmethod-argument
-                                                   (index ?index)
-                                                   (argument-name ?mname)
-                                                   (parent ?args)
-                                                   (query ?query))))
-         (modify-instance ?f3 (parent ?name))
-         (modify-instance ?f4 (parent ?name)))
+         (make-instance ?last of defmethod-argument
+                        (index ?index)
+                        (argument-name ?mname)
+                        (parent ?args)
+                        (query ?query)))
 
 ; Error states
 ;(defrule error:defmethod-argument:wildcard-parameter:nested-list:no-types-or-query
@@ -299,19 +296,17 @@
                                  ?type&:(symbolp ?type)
                                  $?types&:(all-symbolsp ?types)
                                  ?query))
-         ?f2 <- (object (is-a singlefield-variable)
-                        (name ?mname))
-         ?f3 <- (object (is-a list|global-variable)
-                        (name ?query))
+         (object (is-a singlefield-variable)
+                 (name ?mname))
+         (object (is-a list|global-variable)
+                 (name ?query))
          =>
          (unmake-instance ?f)
-         (bind ?name (instance-name (make-instance ?curr of defmethod-argument
-                                                   (parent ?parent)
-                                                   (argument-name ?mname)
-                                                   (types ?type ?types)
-                                                   (query ?query))))
-         (modify-instance ?f2 (parent ?name))
-         (modify-instance ?f3 (parent ?name)))
+         (make-instance ?curr of defmethod-argument
+                        (parent ?parent)
+                        (argument-name ?mname)
+                        (types ?type ?types)
+                        (query ?query)))
 
 (defrule build:defmethod-argument:singlefield-argument:types-only
          (stage (current parse))
@@ -324,16 +319,16 @@
                        (contents ?mname
                                  ?type&:(symbolp ?type)
                                  $?types&:(all-symbolsp ?types)))
-         ?f2 <- (object (is-a singlefield-variable)
-                        (name ?mname))
+         (object (is-a singlefield-variable)
+                 (name ?mname))
          =>
          (unmake-instance ?f)
-         (bind ?name (instance-name (make-instance ?curr of defmethod-argument
-                                                   (index ?index)
-                                                   (parent ?args)
-                                                   (argument-name ?mname)
-                                                   (types ?type ?types))))
-         (modify-instance ?f2 (parent ?name)))
+         (make-instance ?curr of defmethod-argument
+                        (index ?index)
+                        (parent ?args)
+                        (argument-name ?mname)
+                        (types ?type ?types)))
+
 (defrule build:defmethod-argument:singlefield-argument:query-only
          (stage (current parse))
          (object (is-a defmethod)
@@ -344,16 +339,14 @@
                        (index ?index)
                        (contents ?mname
                                  ?query))
-         ?f2 <- (object (is-a singlefield-variable)
-                        (name ?mname))
-         ?f3 <- (object (is-a list|global-variable)
-                        (name ?query))
+         (object (is-a singlefield-variable)
+                 (name ?mname))
+         (object (is-a list|global-variable)
+                 (name ?query))
          =>
          (unmake-instance ?f)
-         (bind ?name (instance-name (make-instance ?curr of defmethod-argument
-                                                   (index ?index)
-                                                   (parent ?args)
-                                                   (argument-name ?mname)
-                                                   (query ?query))))
-         (modify-instance ?f2 (parent ?name))
-         (modify-instance ?f3 (parent ?name)))
+         (make-instance ?curr of defmethod-argument
+                        (index ?index)
+                        (parent ?args)
+                        (argument-name ?mname)
+                        (query ?query)))
