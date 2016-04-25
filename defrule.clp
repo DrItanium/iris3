@@ -108,7 +108,7 @@
          =>
          (unmake-instance ?list)
          (make-instance ?list of match
-                       (index ?index)
+                        (index ?index)
                         (parent ?parent)
                         (contents ?contents)))
 
@@ -127,8 +127,8 @@
                         (contents $?contents))
          =>
          (unmake-instance ?f2)
-         (modify-instance ?f
-                          (contents $?before
+         (modify-instance ?rule
+                          (matches $?before
                                     (make-instance ?list of match
                                                    (index ?index)
                                                    (parent ?rule)

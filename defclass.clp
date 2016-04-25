@@ -32,7 +32,6 @@
   (slot class-name
         (type SYMBOL)
         (default ?NONE))
-  (multislot inherits-from)
   (slot role
         (type SYMBOL)
         (allowed-symbols concrete 
@@ -41,6 +40,7 @@
         (type SYMBOL)
         (allowed-symbols reactive 
                          non-reactive))
+  (multislot inherits-from)
   (multislot contents))
 
 (defrule translate-defclass:comment
@@ -137,6 +137,7 @@
                         (index ?index)
                         (parent ?parent)
                         (handler-name ?name)))
+
 (defrule translate-defclass:convert-message-handler-documentation:type
          (stage (current parse))
          ?f <- (object (is-a defclass)

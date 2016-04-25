@@ -19,7 +19,7 @@
 (defclass function
   (is-a node
         has-comment)
-        
+
   (slot function-name
         (visibility public)
         (type SYMBOL)
@@ -37,7 +37,7 @@
 (defrule translate-deffunction:comment
          (stage (current parse))
          ?f <- (object (is-a list)
-             (index ?index)
+                       (index ?index)
                        (contents deffunction 
                                  ?func-name 
                                  ?comment
@@ -65,7 +65,7 @@
 (defrule translate-deffunction:no-comment
          (stage (current parse))
          ?f <- (object (is-a list)
-                        (index ?index)
+                       (index ?index)
                        (contents deffunction 
                                  ?func-name 
                                  ?args
@@ -116,7 +116,7 @@
 (defrule convert-defmessage-handler:all
          (stage (current parse))
          ?f <- (object (is-a list)
-                        (index ?index)
+                       (index ?index)
                        (contents defmessage-handler
                                  ?class-name&:(symbolp ?class-name)
                                  ?message-name&:(symbolp ?message-name)
@@ -153,7 +153,7 @@
 (defrule convert-defmessage-handler:no-comment
          (stage (current parse))
          ?f <- (object (is-a list)
-                        (index ?index)
+                       (index ?index)
                        (contents defmessage-handler
                                  ?class-name&:(symbolp ?class-name)
                                  ?message-name&:(symbolp ?message-name)
@@ -184,7 +184,7 @@
 (defrule convert-defmessage-handler:no-handler
          (stage (current parse))
          ?f <- (object (is-a list)
-                        (index ?index)
+                       (index ?index)
                        (contents defmessage-handler
                                  ?class-name&:(symbolp ?class-name)
                                  ?message-name&:(symbolp ?message-name)
@@ -218,7 +218,7 @@
 (defrule convert-defmessage-handler:no-handler-or-comment
          (stage (current parse))
          ?f <- (object (is-a list)
-                        (index ?index)
+                       (index ?index)
                        (contents defmessage-handler
                                  ?class-name&:(symbolp ?class-name)
                                  ?message-name&:(symbolp ?message-name)
@@ -302,9 +302,9 @@
                  (is-a singlefield-variable)
                  (value ?cvalue))
          ?f <- (object (is-a singlefield-variable)
-                        (index ?index)
                        (value ?cvalue)
                        (name ?targ&~?arg)
+                       (index ?index)
                        (parent ?parent))
          (test (send ?f 
                      parent-is 
@@ -326,9 +326,9 @@
                  (name ?last)
                  (value ?cvalue))
          ?f <- (object (is-a multifield-variable)
-                        (index ?index)
                        (value ?cvalue)
                        (name ?name&~?last)
+                       (index ?index)
                        (parent ?parent))
          (test (send ?f 
                      parent-is 
@@ -352,9 +352,9 @@
                  (value ?cvalue))
          ?f <- (object (is-a singlefield-variable)
                        (value ?qvalue&:(eq ?cvalue
-                                           (format nil "$%s" ?qvalue)))
-                        (index ?index)
+                                           (str-cat "$" ?qvalue)))
                        (name ?name)
+                       (index ?index)
                        (parent ?parent))
          (test (send ?f 
                      parent-is 
@@ -373,11 +373,11 @@
          (object (is-a function)
                  (local-binds $? ?arg $?)
                  (name ?function))
-         (object (name ?arg)
-                 (is-a singlefield-variable)
+         (object (is-a singlefield-variable)
+                 (name ?arg)
                  (value ?cvalue))
          ?f <- (object (is-a singlefield-variable)
-                        (index ?index)
+                       (index ?index)
                        (value ?cvalue)
                        (name ?targ&~?arg)
                        (parent ?parent))
@@ -397,13 +397,13 @@
          (object (is-a function)
                  (local-binds $? ?arg $?)
                  (name ?function))
-         (object (name ?arg)
-                 (is-a singlefield-variable)
+         (object (is-a singlefield-variable)
+                 (name ?arg)
                  (value ?cvalue))
          ?f <- (object (is-a multifield-variable)
                        (value ?mfvalue&:(eq ?mfvalue 
                                             (format nil "$%s" ?cvalue)))
-                        (index ?index)
+                       (index ?index)
                        (name ?targ&~?arg)
                        (parent ?parent))
          (test (send ?f 
@@ -427,8 +427,8 @@
                  (value ?cvalue))
          ?f <- (object (is-a multifield-variable)
                        (value ?cvalue)
-                        (index ?index)
                        (name ?name&~?last)
+                       (index ?index)
                        (parent ?parent))
          (test (send ?f 
                      parent-is 
@@ -453,8 +453,8 @@
          ?f <- (object (is-a singlefield-variable)
                        (value ?qvalue&:(eq ?cvalue
                                            (format nil "$%s" ?qvalue)))
-                        (index ?index)
                        (name ?name)
+                       (index ?index)
                        (parent ?parent))
          (test (send ?f 
                      parent-is 
