@@ -54,22 +54,36 @@
          (object (is-a local-variable)
                  (name ?var))
          (object (is-a function)
-                 (name ?function)
-                 (local-binds $?lb)
-                 (arguments $?args))
-         (test (and (not (neq ?function 
-                              (expand$ (send ?bind get-parent-chain))))
-                    (neq ?var $?lb)
-                    (neq ?var $?args)))
+                 (name ?function&:(send ?bind parent-is ?function))
+                 (local-binds $?lb&:(not (member$ ?var 
+                                                  ?lb)))
+                 (arguments $?args&:(not (member$ ?var 
+                                                  ?args))))
          =>
          ; now we need to take ownership of the variable in the bind since we didn't find it 
          ; in the local binds nor the arguments
          (modify-instance ?var
                           (parent ?function))
+         (bind ?ref-construction
+               (symbol-to-instance-name (gensym*)))
          (modify-instance ?bind
-                          (variable (make-instance of reference
-                                                   (parent ?bind)
-                                                   (value ?var))))
-         (modify-instance ?function
-                          (local-binds $?lb 
-                                       ?var)))
+                          (variable ?ref-construction))
+         (assert (make-reference ?ref-construction ?bind ?var))
+         (slot-insert$ ?function
+                       local-binds
+                       1
+                       ?var))
+
+(defrule build-reference-from-fact
+         (declare (salience ?*priority:one*))
+         (stage (current associate))
+         ?f <- (make-reference ?id ?parent ?value)
+         =>
+         (retract ?f)
+         (make-instance ?id of reference
+                        (parent ?parent)
+                        (value ?value)))
+
+                       
+
+

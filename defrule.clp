@@ -61,15 +61,19 @@
          (declare (salience ?*priority:three*))
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (contents declare ?salience ?auto-focus)
+                       (contents declare 
+                                 ?salience 
+                                 ?auto-focus)
                        (name ?name)
                        (parent ?parent))
          ?f2 <- (object (is-a list)
                         (name ?salience)
-                        (contents salience ?s-value))
+                        (contents salience 
+                                  ?s-value))
          ?f3 <- (object (is-a list)
                         (name ?auto-focus)
-                        (contents auto-focus ?af-value))
+                        (contents auto-focus 
+                                  ?af-value))
          =>
          (unmake-instance ?f ?f2 ?f3)
          (make-instance ?name of defrule-declaration

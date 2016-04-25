@@ -293,8 +293,9 @@
                        (value ?cvalue)
                        (name ?targ&~?arg)
                        (parent ?parent))
-         (test (not (neq ?function 
-                         (expand$ (send ?f get-parent-chain)))))
+         (test (send ?f 
+                     parent-is 
+                     ?function))
          =>
          (unmake-instance ?f)
          (make-instance ?targ of reference
@@ -314,8 +315,9 @@
                        (value ?cvalue)
                        (name ?name&~?last)
                        (parent ?parent))
-         (test (not (neq ?function
-                         (expand$ (send ?f get-parent-chain)))))
+         (test (send ?f 
+                     parent-is 
+                     ?function))
          =>
          (unmake-instance ?f)
          (make-instance ?name of reference
@@ -337,8 +339,9 @@
                                            (format nil "$%s" ?qvalue)))
                        (name ?name)
                        (parent ?parent))
-         (test (not (neq ?function
-                         (expand$ (send ?f get-parent-chain)))))
+         (test (send ?f 
+                     parent-is 
+                     ?function))
          =>
          (unmake-instance ?f)
          (make-instance ?name of reference
@@ -359,8 +362,9 @@
                        (value ?cvalue)
                        (name ?targ&~?arg)
                        (parent ?parent))
-         (test (not (neq ?function 
-                         (expand$ (send ?f get-parent-chain)))))
+         (test (send ?f 
+                     parent-is 
+                     ?function))
          =>
          (unmake-instance ?f)
          (make-instance ?targ of reference
@@ -381,8 +385,9 @@
                                             (format nil "$%s" ?cvalue)))
                        (name ?targ&~?arg)
                        (parent ?parent))
-         (test (not (neq ?function 
-                         (expand$ (send ?f get-parent-chain)))))
+         (test (send ?f 
+                     parent-is 
+                     ?function))
          =>
          (unmake-instance ?f)
          (make-instance ?targ of reference
@@ -402,8 +407,9 @@
                        (value ?cvalue)
                        (name ?name&~?last)
                        (parent ?parent))
-         (test (not (neq ?function
-                         (expand$ (send ?f get-parent-chain)))))
+         (test (send ?f 
+                     parent-is 
+                     ?function))
          =>
          (unmake-instance ?f)
          (make-instance ?name of reference
@@ -425,8 +431,9 @@
                                            (format nil "$%s" ?qvalue)))
                        (name ?name)
                        (parent ?parent))
-         (test (not (neq ?function
-                         (expand$ (send ?f get-parent-chain)))))
+         (test (send ?f 
+                     parent-is 
+                     ?function))
          =>
          (unmake-instance ?f)
          (make-instance ?name of reference
