@@ -39,49 +39,53 @@
   (not-exists string-classp
               $?list))
 
-(deftemplate lexer
-             (slot file
-                   (type LEXEME)
-                   (default ?NONE))
-             (slot router
-                   (type SYMBOL)
-                   (default ?NONE))
-             (slot top
-                   (type SYMBOL
-                         INSTANCE-NAME)
-                   (default ?NONE))
-             (multislot elements))
+(defclass file 
+  (is-a USER)
+  (slot count
+        (visibility public)
+        (storage local)
+        (type INTEGER)
+        (range 0 ?VARIABLE))
+  (slot file
+        (visibility public)
+        (storage local)
+        (type LEXEME)
+        (default ?NONE))
+  (slot router
+        (visibility public)
+        (storage local)
+        (type SYMBOL)
+        (default ?NONE))
+  (multislot top
+             (visibility public)
+             (storage local)
+             (type SYMBOL
+                   INSTANCE-NAME))
+  (multislot elements
+             (visibility public)
+             (storage local))
+  (message-handler parent-is primary))
 
-(defgeneric construct-instance
-            "constructs an instance of soemthing given a series of variables. Returns the instance name of the thing")
+(defmessage-handler file parent-is primary
+                    (?parent)
+                    (eq (instance-name ?self)
+                        ?parent))
 
-(defmessage-handler SYMBOL part-of-a primary
-                    "returns FALSE unless the target type is SYMBOL"
-                    (?type)
-                    (not (neq (upcase ?type)
-                              LEXEME
-                              SYMBOL)))
+
+
 (defclass node
   (is-a USER)
   (slot parent 
         (type SYMBOL
               INSTANCE-NAME)
         (default ?NONE))
-  (message-handler part-of-a primary))
-(defmessage-handler node part-of-a
-                    "Checks to see if the current object or one of its parents are of a given type"
-                    (?type)
-                    (if (eq (class ?self)
-                            ?type) then
-                      TRUE
-                      else
-                      (send ?self:parent 
-                            part-of-a ?type)))
-
-(defmessage-handler LEXEME parent-is primary
-                    (?parent)
-                    (eq ?self
-                        ?parent))
+  (slot index
+        (type INTEGER)
+        (range 0 ?VARIABLE)
+        (visibility public)
+        (storage local)
+        (default ?NONE))
+  (message-handler parent-is primary))
 
 (defmessage-handler node parent-is primary
                     (?parent)
@@ -90,8 +94,6 @@
                         (send ?self:parent 
                               parent-is 
                               ?parent)))
-                        
-
 
 (defclass has-comment
   (is-a USER)
@@ -132,14 +134,7 @@
   (slot value
         (visibility public)
         (default ?NONE)))
-(defmethod construct-instance
-  ((?class SYMBOL)
-   (?parent SYMBOL
-            INSTANCE-NAME)
-   ?value)
-  (instance-name (make-instance of ?class 
-                                (parent ?parent)
-                                (value ?value))))
+
 (defclass typed-scalar-node
   (is-a scalar-node)
   (slot type
@@ -173,115 +168,6 @@
 
 
 
-(defmethod construct-instance
-  "convert a symbol of type OR_CONSTRAINT to class of type or-constraint"
-  ((?class SYMBOL 
-           (eq ?current-argument
-               OR_CONSTRAINT))
-   (?parent SYMBOL
-            INSTANCE-NAME)
-   (?value LEXEME))
-  (construct-instance or-constraint
-                      ?parent 
-                      ?value))
-
-(defmethod construct-instance
-  "convert a symbol of type AND_CONSTRAINT to class of type and-constraint"
-  ((?class SYMBOL 
-           (eq ?current-argument
-               AND_CONSTRAINT))
-   (?parent SYMBOL
-            INSTANCE-NAME)
-   (?value LEXEME))
-  (construct-instance and-constraint
-                      ?parent 
-                      ?value))
-
-(defmethod construct-instance
-  "convert a symbol of type NOT_CONSTRAINT to class of type not-constraint"
-  ((?class SYMBOL 
-           (eq ?current-argument
-               NOT_CONSTRAINT))
-   (?parent SYMBOL
-            INSTANCE-NAME)
-   (?value LEXEME))
-  (construct-instance not-constraint
-                      ?parent 
-                      ?value))
-
-(defmethod construct-instance
-  "convert a symbol of type MF_WILDCARD to class of type multifield-wildcard"
-  ((?class SYMBOL 
-           (eq ?current-argument
-               MF_WILDCARD))
-   (?parent SYMBOL
-            INSTANCE-NAME)
-   (?value LEXEME))
-  (construct-instance multifield-wildcard
-                      ?parent 
-                      ?value))
-
-(defmethod construct-instance
-  "convert a symbol of type SF_WILDCARD to class of type singlefield-wildcard"
-  ((?class SYMBOL 
-           (eq ?current-argument
-               SF_WILDCARD))
-   (?parent SYMBOL
-            INSTANCE-NAME)
-   (?value LEXEME))
-  (construct-instance singlefield-wildcard
-                      ?parent 
-                      ?value))
-
-(defmethod construct-instance
-  "convert a symbol of type MF_VARIABLE to class of type multifield-variable"
-  ((?class SYMBOL 
-           (eq ?current-argument
-               MF_VARIABLE))
-   (?parent SYMBOL
-            INSTANCE-NAME)
-   (?value LEXEME))
-  (construct-instance multifield-variable
-                      ?parent 
-                      ?value))
-
-(defmethod construct-instance
-  "convert a symbol of type SF_VARIABLE to class of type singlefield-variable"
-  ((?class SYMBOL 
-           (eq ?current-argument
-               SF_VARIABLE))
-   (?parent SYMBOL
-            INSTANCE-NAME)
-   (?value LEXEME))
-  (construct-instance singlefield-variable
-                      ?parent 
-                      ?value))
-
-(defmethod construct-instance
-  "convert a symbol of type MF_GBL_VARIABLE to class of type multifield-global-variable"
-  ((?class SYMBOL 
-           (eq ?current-argument
-               MF_GBL_VARIABLE))
-   (?parent SYMBOL
-            INSTANCE-NAME)
-   (?value LEXEME))
-  (construct-instance multifield-global-variable
-                      ?parent 
-                      ?value))
-
-(defmethod construct-instance
-  "convert a symbol of type GBL_VARIABLE to class of type singlefield-global-variable"
-  ((?class SYMBOL 
-           (eq ?current-argument
-               GBL_VARIABLE))
-   (?parent SYMBOL
-            INSTANCE-NAME)
-   (?value LEXEME))
-  (construct-instance singlefield-global-variable
-                      ?parent 
-                      ?value))
-
-
 (defclass list
   (is-a node)
   (multislot contents
@@ -299,163 +185,210 @@
          ?f <- (open ?path)
          =>
          (retract ?f)
-         (bind ?name (gensym*))
+         (bind ?name 
+               (gensym*))
          (if (open ?path 
                    ?name 
                    "r") then
-           (assert (lexer (file ?path)
+           (make-instance ?name of file
+                          (file ?path)
                           (router ?name)
                           (elements (next-token ?name))
-                          (top ?name)))
+                          (top (symbol-to-instance-name ?name)))
            else
            (printout werror 
                      "couldn't open " ?path crlf)))
-(defrule read-element
-         (stage (current lex))
-         ?f <- (lexer (elements)
-                      (file ?path)
-                      (router ?name)
-                      (top ?top))
-         =>
-         ; read an entire line at a time instead so we can capture quoted parens ahead of time
-         (modify ?f 
-                 (elements (next-token ?name))))
 
 (defrule new-top-level
          (declare (salience 2))
          (stage (current lex))
-         ?f <- (lexer (elements LPAREN ?)
-                      (router ?top)
-                      (top ?top&:(symbolp ?top)))
+         (object (is-a file)
+                 (elements LPAREN ?)
+                 (top ?file)
+                 (name ?file)
+                 (count ?count)
+                 (router ?router))
          =>
-         (modify ?f
-                 (elements)
-                 (top (make-instance of list 
-                                     (parent ?top)))))
+         (modify-instance ?file 
+                          (top (make-instance of list
+                                              (index ?count)
+                                              (parent ?file)) 
+                               ?file)
+                          (count (+ ?count 1))
+                          (elements (next-token ?router))))
 (defrule new-list
          (declare (salience 2))
          (stage (current lex))
-         ?f <- (lexer (elements LPAREN ?)
-                      (top ?top))
+         ?f <- (object (is-a file)
+                       (elements LPAREN ?)
+                       (top ?top $?rest)
+                       (router ?r)
+                       (count ?count))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
          =>
+         (bind ?z 
+               (make-instance of list
+                              (index ?count)
+                              (parent ?top)))
          (modify-instance ?top 
                           (contents ?contents 
-                                    (bind ?name 
-                                          (make-instance of list
-                                                         (parent ?top)))))
-         (modify ?f 
-                 (elements)
-                 (top ?name)))
+                                    ?z))
+         (modify-instance ?f (top ?z
+                                  ?top
+                                  ?rest)
+                          (elements (next-token ?r))
+                          (count (+ ?count 1))))
+
+(deffunction sort-by-index
+             (?a ?b)
+             (> (send ?a get-index)
+                (send ?b get-index)))
 
 (defrule end-list
          (declare (salience 2))
          (stage (current lex))
-         ?f <- (lexer (elements RPAREN ?)
-                      (top ?top))
+         ?f <- (object (is-a file)
+                       (elements RPAREN ?)
+                       (router ?r)
+                       (top ?top $?rest))
          (object (is-a list)
-                 (name ?top)
-                 (parent ?parent))
+                 (name ?top))
          =>
-         (modify ?f 
-                 (elements)
-                 (top ?parent)))
+         (modify-instance ?f 
+                          (elements (next-token ?r))
+                          (top ?rest)))
+
+
+
 
 (defrule parse-special-element
          (declare (salience 1))
          (stage (current lex))
-         ?f <- (lexer (elements ?type 
-                                ?value)
-                      (top ?top))
-         ?f2 <- (object (is-a list)
-                        (name ?top)
-                        (contents $?contents))
-         =>
-         (modify-instance ?f2 
-                          (contents $?contents
-                                    (construct-instance ?type
-                                                        ?top
-                                                        ?value)))
-         (modify ?f 
-                 (elements)))
-
-(defrule warn:parse-special-element-outside-list
-         (declare (salience 1))
-         (stage (current lex))
-         ?f <- (lexer (elements ?type ?value)
-                      (router ?top)
-                      (top ?top&:(symbolp ?top)))
-         =>
-         (printout werror 
-                   "WARNING: Found a special tag outside a list!" crlf)
-         (construct-instance ?type 
-                             ?top 
-                             ?value)
-         (modify ?f 
-                 (elements)))
-
-(defrule parse-string
-         (declare (salience 2))
-         (stage (current lex))
-         ?f <- (lexer (elements ?value&:(stringp ?value))
-                      (top ?top))
+         ?f <- (object (is-a file)
+                       (elements ?type
+                                 ?value)
+                       (top ?top $?)
+                       (router ?r)
+                       (count ?count))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
          =>
-         (modify ?f 
-                 (elements))
-         (modify-instance ?top
-                          (contents $?contents 
-                                    (construct-instance string
-                                                        ?top
-                                                        ?value))))
+         (modify-instance ?f 
+                          (count (+ ?count 1))
+                          (elements (next-token ?r)))
+         (modify-instance ?top 
+                          (contents ?contents
+                                    (make-instance of ?type
+                                                   (index ?count)
+                                                   (parent ?top)
+                                                   (value ?value)))))
+
+(defrule warn:parse-special-element-outside-list
+         (declare (salience 1))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements ?type ?value)
+                       (router ?r)
+                       (top ?file)
+                       (name ?file)
+                       (count ?count))
+         =>
+         (printout werror 
+                   "WARNING: Found a special tag outside a list!" crlf)
+         (modify-instance ?f
+                          (elements (next-token ?r))
+                          (count (+ ?count 1)))
+         (make-instance of ?type
+                        (index ?count)
+                        (parent ?file)
+                        (value ?value)))
+
+(defrule parse-string
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements ?value&:(stringp ?value))
+                       (top ?top $?)
+                       (router ?r)
+                       (count ?count))
+         (object (is-a list)
+                 (name ?top)
+                 (contents $?contents))
+         =>
+         (modify-instance ?f
+                          (elements (next-token ?r))
+                          (count (+ ?count 1)))
+         (modify-instance ?top 
+                          (contents ?contents
+                                    (make-instance of string
+                                                   (index ?count)
+                                                   (parent ?top)
+                                                   (value ?value)))))
+
 (defrule parse-string-outside-list
          (declare (salience 2))
          (stage (current lex))
-         ?f <- (lexer (elements ?value&:(stringp ?value))
-                      (top ?top&:(symbolp ?top)))
+         ?f <- (object (is-a file)
+                       (elements ?value&:(stringp ?value))
+                       (name ?file)
+                       (top ?file)
+                       (count ?count)
+                       (router ?r))
          =>
          (printout werror 
                    "WARNING: Found a string outside a list!" crlf)
-         (modify ?f 
-                 (elements))
+         (modify-instance ?f
+                          (count (+ ?count 1))
+                          (elements (next-token ?r)))
          (make-instance of string
-                        (parent ?top)
+                        (index ?count)
+                        (parent ?file)
                         (value ?value)))
 
 (defrule parse-normal-element
          (declare (salience 1))
          (stage (current lex))
-         ?f <- (lexer (elements ?value)
-                      (top ?top))
-         ?f2 <- (object (is-a list)
-                        (name ?top)
-                        (contents $?contents))
+         ?f <- (object (is-a file)
+                       (elements ?value)
+                       (count ?count)
+                       (top ?top $?)
+                       (router ?r))
+         (object (is-a list)
+                 (name ?top)
+                 (contents $?contents))
+
          =>
-         (modify ?f 
-                 (elements))
-         (modify-instance ?f2 
-                          (contents ?contents 
-                                    ?value)))
+         (modify-instance ?top
+                          (contents ?contents
+                                    ?value))
+         (modify-instance ?f
+                          (elements (next-token ?r))
+                          (count (+ ?count 1))))
+
 
 (defrule warn:parse-normal-element-outside-list
          (declare (salience 1))
          (stage (current lex))
-         ?f <- (lexer (elements ?value)
-                      (router ?top)
-                      (top ?top&:(symbolp ?top)))
+         ?f <- (object (is-a file)
+                       (elements ?value)
+                       (name ?file)
+                       (top ?file)
+                       (count ?count)
+                       (router ?r))
          =>
          (format werror 
                  "WARNING: Found a %s (%s) outside a list!%n" 
                  (class ?value)
                  ?value)
-         (modify ?f 
-                 (elements))
+         (modify-instance ?f 
+                          (count (+ ?count 1))
+                          (elements (next-token ?r)))
          (make-instance of typed-scalar-node
-                        (parent ?top)
+                        (index ?count)
+                        (parent ?file)
                         (type (class ?value))
                         (value ?value)))
 
@@ -463,22 +396,487 @@
 (defrule error:end-list-without-beginning
          (declare (salience 2))
          (stage (current lex))
-         ?f <- (lexer (elements RPAREN ?)
-                      (router ?top)
-                      (top ?top)
-                      (file ?file))
+         ?f <- (object (is-a file)
+                       (elements RPAREN ?)
+                       (name ?file)
+                       (top ?file)
+                       (file ?path))
          =>
          (printout werror
                    "ERROR: " ?file crlf
+                   tab "PATH: " ?path crlf
                    tab "found a ) outside an actual list!" crlf)
          (halt))
 
 (defrule finished-completely
          (declare (salience 3))
          (stage (current lex))
-         ?f <- (lexer (elements STOP ?)
-                      (router ?name))
+         ?f <- (object (is-a file)
+                       (elements STOP ?)
+                       (router ?name))
          =>
          (close ?name)
-         (retract ?f))
+         (modify-instance ?f 
+                          (elements)))
+
+(defrule error:bottom-of-top-should-be-self-referential
+         (declare (salience 10000))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (name ?file)
+                       (top ?x&~?file)
+                       (file ?path))
+         =>
+         (printout werror
+                   "ERROR: " ?file crlf
+                   tab "PATH: " ?path crlf
+                   tab "The bottom of the parsing stack is not the file itself. Some rule has broken the parser" crlf)
+         (halt))
+
+(defrule error:top-is-empty
+         (declare (salience 10000))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (top)
+                       (file ?file))
+         =>
+         (printout werror
+                   "ERROR: " ?file crlf
+                   tab "The parsing stack is empty. Some rule has broken the parser" crlf)
+         (halt))
 ;-----------------------------------------------------------------------------
+; Auto generated rules for special symbols
+;-----------------------------------------------------------------------------
+
+(defrule construct-special-instance:or-constraint
+         "convert a symbol of type OR_CONSTRAINT to class of type or-constraint"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements OR_CONSTRAINT
+                                 ?value)
+                       (top ?top 
+                            $?)
+                       (router ?r)
+                       (count ?count))
+         (object (is-a list)
+                 (name ?top)
+                 (contents $?contents))
+         =>
+         (modify-instance ?top
+                          (contents ?contents
+                                    (make-instance of or-constraint
+                                                   (index ?count)
+                                                   (parent ?top)
+                                                   (value ?value))))
+         (modify-instance ?f 
+                          (count (+ ?count 1))
+                          (elements (next-token ?r))))
+
+
+(defrule construct-special-instance-outside-list:or-constraint
+         "convert a symbol of type OR_CONSTRAINT to class of type or-constraint"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements OR_CONSTRAINT
+                                 ?value)
+                       (top ?file)
+                       (name ?file)
+                       (router ?r)
+                       (count ?count))
+         =>
+         (printout werror
+                   "WARNING: Found a special tag outside a list!" crlf)
+         (modify-instance ?f
+                          (count (+ ?count 1))
+                          (elements (next-token ?r)))
+         (make-instance of or-constraint
+                        (index ?count)
+                        (parent ?file)
+                        (value ?value)))
+
+(defrule construct-special-instance:and-constraint
+         "convert a symbol of type AND_CONSTRAINT to class of type and-constraint"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements AND_CONSTRAINT
+                                 ?value)
+                       (top ?top 
+                            $?)
+                       (router ?r)
+                       (count ?count))
+         (object (is-a list)
+                 (name ?top)
+                 (contents $?contents))
+         =>
+         (modify-instance ?top
+                          (contents ?contents
+                                    (make-instance of and-constraint
+                                                   (index ?count)
+                                                   (parent ?top)
+                                                   (value ?value))))
+         (modify-instance ?f 
+                          (count (+ ?count 1))
+                          (elements (next-token ?r))))
+
+
+(defrule construct-special-instance-outside-list:and-constraint
+         "convert a symbol of type AND_CONSTRAINT to class of type and-constraint"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements AND_CONSTRAINT
+                                 ?value)
+                       (top ?file)
+                       (name ?file)
+                       (router ?r)
+                       (count ?count))
+         =>
+         (printout werror
+                   "WARNING: Found a special tag outside a list!" crlf)
+         (modify-instance ?f
+                          (count (+ ?count 1))
+                          (elements (next-token ?r)))
+         (make-instance of and-constraint
+                        (index ?count)
+                        (parent ?file)
+                        (value ?value)))
+
+(defrule construct-special-instance:not-constraint
+         "convert a symbol of type NOT_CONSTRAINT to class of type not-constraint"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements NOT_CONSTRAINT
+                                 ?value)
+                       (top ?top 
+                            $?)
+                       (router ?r)
+                       (count ?count))
+         (object (is-a list)
+                 (name ?top)
+                 (contents $?contents))
+         =>
+         (modify-instance ?top
+                          (contents ?contents
+                                    (make-instance of not-constraint
+                                                   (index ?count)
+                                                   (parent ?top)
+                                                   (value ?value))))
+         (modify-instance ?f 
+                          (count (+ ?count 1))
+                          (elements (next-token ?r))))
+
+
+(defrule construct-special-instance-outside-list:not-constraint
+         "convert a symbol of type NOT_CONSTRAINT to class of type not-constraint"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements NOT_CONSTRAINT
+                                 ?value)
+                       (top ?file)
+                       (name ?file)
+                       (router ?r)
+                       (count ?count))
+         =>
+         (printout werror
+                   "WARNING: Found a special tag outside a list!" crlf)
+         (modify-instance ?f
+                          (count (+ ?count 1))
+                          (elements (next-token ?r)))
+         (make-instance of not-constraint
+                        (index ?count)
+                        (parent ?file)
+                        (value ?value)))
+
+(defrule construct-special-instance:multifield-wildcard
+         "convert a symbol of type MF_WILDCARD to class of type multifield-wildcard"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements MF_WILDCARD
+                                 ?value)
+                       (top ?top 
+                            $?)
+                       (router ?r)
+                       (count ?count))
+         (object (is-a list)
+                 (name ?top)
+                 (contents $?contents))
+         =>
+         (modify-instance ?top
+                          (contents ?contents
+                                    (make-instance of multifield-wildcard
+                                                   (index ?count)
+                                                   (parent ?top)
+                                                   (value ?value))))
+         (modify-instance ?f 
+                          (count (+ ?count 1))
+                          (elements (next-token ?r))))
+
+
+(defrule construct-special-instance-outside-list:multifield-wildcard
+         "convert a symbol of type MF_WILDCARD to class of type multifield-wildcard"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements MF_WILDCARD
+                                 ?value)
+                       (top ?file)
+                       (name ?file)
+                       (router ?r)
+                       (count ?count))
+         =>
+         (printout werror
+                   "WARNING: Found a special tag outside a list!" crlf)
+         (modify-instance ?f
+                          (count (+ ?count 1))
+                          (elements (next-token ?r)))
+         (make-instance of multifield-wildcard
+                        (index ?count)
+                        (parent ?file)
+                        (value ?value)))
+
+(defrule construct-special-instance:singlefield-wildcard
+         "convert a symbol of type SF_WILDCARD to class of type singlefield-wildcard"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements SF_WILDCARD
+                                 ?value)
+                       (top ?top 
+                            $?)
+                       (router ?r)
+                       (count ?count))
+         (object (is-a list)
+                 (name ?top)
+                 (contents $?contents))
+         =>
+         (modify-instance ?top
+                          (contents ?contents
+                                    (make-instance of singlefield-wildcard
+                                                   (index ?count)
+                                                   (parent ?top)
+                                                   (value ?value))))
+         (modify-instance ?f 
+                          (count (+ ?count 1))
+                          (elements (next-token ?r))))
+
+
+(defrule construct-special-instance-outside-list:singlefield-wildcard
+         "convert a symbol of type SF_WILDCARD to class of type singlefield-wildcard"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements SF_WILDCARD
+                                 ?value)
+                       (top ?file)
+                       (name ?file)
+                       (router ?r)
+                       (count ?count))
+         =>
+         (printout werror
+                   "WARNING: Found a special tag outside a list!" crlf)
+         (modify-instance ?f
+                          (count (+ ?count 1))
+                          (elements (next-token ?r)))
+         (make-instance of singlefield-wildcard
+                        (index ?count)
+                        (parent ?file)
+                        (value ?value)))
+
+(defrule construct-special-instance:multifield-variable
+         "convert a symbol of type MF_VARIABLE to class of type multifield-variable"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements MF_VARIABLE
+                                 ?value)
+                       (top ?top 
+                            $?)
+                       (router ?r)
+                       (count ?count))
+         (object (is-a list)
+                 (name ?top)
+                 (contents $?contents))
+         =>
+         (modify-instance ?top
+                          (contents ?contents
+                                    (make-instance of multifield-variable
+                                                   (index ?count)
+                                                   (parent ?top)
+                                                   (value ?value))))
+         (modify-instance ?f 
+                          (count (+ ?count 1))
+                          (elements (next-token ?r))))
+
+
+(defrule construct-special-instance-outside-list:multifield-variable
+         "convert a symbol of type MF_VARIABLE to class of type multifield-variable"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements MF_VARIABLE
+                                 ?value)
+                       (top ?file)
+                       (name ?file)
+                       (router ?r)
+                       (count ?count))
+         =>
+         (printout werror
+                   "WARNING: Found a special tag outside a list!" crlf)
+         (modify-instance ?f
+                          (count (+ ?count 1))
+                          (elements (next-token ?r)))
+         (make-instance of multifield-variable
+                        (index ?count)
+                        (parent ?file)
+                        (value ?value)))
+
+(defrule construct-special-instance:singlefield-variable
+         "convert a symbol of type SF_VARIABLE to class of type singlefield-variable"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements SF_VARIABLE
+                                 ?value)
+                       (top ?top 
+                            $?)
+                       (router ?r)
+                       (count ?count))
+         (object (is-a list)
+                 (name ?top)
+                 (contents $?contents))
+         =>
+         (modify-instance ?top
+                          (contents ?contents
+                                    (make-instance of singlefield-variable
+                                                   (index ?count)
+                                                   (parent ?top)
+                                                   (value ?value))))
+         (modify-instance ?f 
+                          (count (+ ?count 1))
+                          (elements (next-token ?r))))
+
+
+(defrule construct-special-instance-outside-list:singlefield-variable
+         "convert a symbol of type SF_VARIABLE to class of type singlefield-variable"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements SF_VARIABLE
+                                 ?value)
+                       (top ?file)
+                       (name ?file)
+                       (router ?r)
+                       (count ?count))
+         =>
+         (printout werror
+                   "WARNING: Found a special tag outside a list!" crlf)
+         (modify-instance ?f
+                          (count (+ ?count 1))
+                          (elements (next-token ?r)))
+         (make-instance of singlefield-variable
+                        (index ?count)
+                        (parent ?file)
+                        (value ?value)))
+
+(defrule construct-special-instance:multifield-global-variable
+         "convert a symbol of type MF_GBL_VARIABLE to class of type multifield-global-variable"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements MF_GBL_VARIABLE
+                                 ?value)
+                       (top ?top 
+                            $?)
+                       (router ?r)
+                       (count ?count))
+         (object (is-a list)
+                 (name ?top)
+                 (contents $?contents))
+         =>
+         (modify-instance ?top
+                          (contents ?contents
+                                    (make-instance of multifield-global-variable
+                                                   (index ?count)
+                                                   (parent ?top)
+                                                   (value ?value))))
+         (modify-instance ?f 
+                          (count (+ ?count 1))
+                          (elements (next-token ?r))))
+
+
+(defrule construct-special-instance-outside-list:multifield-global-variable
+         "convert a symbol of type MF_GBL_VARIABLE to class of type multifield-global-variable"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements MF_GBL_VARIABLE
+                                 ?value)
+                       (top ?file)
+                       (name ?file)
+                       (router ?r)
+                       (count ?count))
+         =>
+         (printout werror
+                   "WARNING: Found a special tag outside a list!" crlf)
+         (modify-instance ?f
+                          (count (+ ?count 1))
+                          (elements (next-token ?r)))
+         (make-instance of multifield-global-variable
+                        (index ?count)
+                        (parent ?file)
+                        (value ?value)))
+
+(defrule construct-special-instance:singlefield-global-variable
+         "convert a symbol of type GBL_VARIABLE to class of type singlefield-global-variable"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements GBL_VARIABLE
+                                 ?value)
+                       (top ?top 
+                            $?)
+                       (router ?r)
+                       (count ?count))
+         (object (is-a list)
+                 (name ?top)
+                 (contents $?contents))
+         =>
+         (modify-instance ?top
+                          (contents ?contents
+                                    (make-instance of singlefield-global-variable
+                                                   (index ?count)
+                                                   (parent ?top)
+                                                   (value ?value))))
+         (modify-instance ?f 
+                          (count (+ ?count 1))
+                          (elements (next-token ?r))))
+
+
+(defrule construct-special-instance-outside-list:singlefield-global-variable
+         "convert a symbol of type GBL_VARIABLE to class of type singlefield-global-variable"
+         (declare (salience 2))
+         (stage (current lex))
+         ?f <- (object (is-a file)
+                       (elements GBL_VARIABLE
+                                 ?value)
+                       (top ?file)
+                       (name ?file)
+                       (router ?r)
+                       (count ?count))
+         =>
+         (printout werror
+                   "WARNING: Found a special tag outside a list!" crlf)
+         (modify-instance ?f
+                          (count (+ ?count 1))
+                          (elements (next-token ?r)))
+         (make-instance of singlefield-global-variable
+                        (index ?count)
+                        (parent ?file)
+                        (value ?value)))
+

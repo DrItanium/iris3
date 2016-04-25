@@ -17,7 +17,7 @@
 ; 3. This notice may not be removed or altered from any source distribution.
 (defclass defmethod
   (is-a function)
-  (slot index 
+  (slot offset 
         (type INTEGER)
         (default-dynamic -1)))
 
@@ -50,11 +50,12 @@
          ?f <- (object (is-a list)
                        (contents defmethod
                                  ?name
-                                 ?index&:(integerp ?index)
+                                 ?offset&:(integerp ?offset)
                                  ?comment
                                  ?args
                                  $?body)
                        (name ?id)
+                       (index ?index)
                        (parent ?parent))
          ?f2 <- (object (is-a string)
                         (name ?comment)
@@ -71,6 +72,7 @@
          (make-instance ?id of defmethod
                         (parent ?parent)
                         (function-name ?name)
+                        (offset ?offset)
                         (index ?index)
                         (comment ?cvalue)
                         (arguments ?contents)
@@ -80,10 +82,11 @@
          ?f <- (object (is-a list)
                        (contents defmethod
                                  ?name
-                                 ?index&:(integerp ?index)
+                                 ?offset&:(integerp ?offset)
                                  ?args
                                  $?body)
                        (name ?id)
+                       (index ?index)
                        (parent ?parent))
          ; just match against it to make sure
          ?f2 <- (object (is-a list)
@@ -97,6 +100,7 @@
          (make-instance ?id of defmethod
                         (parent ?parent)
                         (function-name ?name)
+                        (offset ?offset)
                         (index ?index)
                         (arguments ?contents)
                         (body ?body)))
@@ -110,6 +114,7 @@
                                  ?args
                                  $?body)
                        (name ?id)
+                       (index ?index)
                        (parent ?parent))
          ?f2 <- (object (is-a string)
                         (name ?comment)
@@ -124,6 +129,7 @@
                  (send ?a put-parent ?id))
          (make-instance ?id of defmethod
                         (parent ?parent)
+                        (index ?index)
                         (function-name ?name)
                         (comment ?cvalue)
                         (arguments ?contents)
@@ -137,6 +143,7 @@
                                  ?args
                                  $?body)
                        (name ?id)
+                       (index ?index)
                        (parent ?parent))
          ?f2 <- (object (is-a list)
                         (name ?args)
@@ -147,6 +154,7 @@
          (progn$ (?a ?contents) 
                  (send ?a put-parent ?id))
          (make-instance ?id of defmethod
+                        (index ?index)
                         (parent ?parent)
                         (function-name ?name)
                         (arguments ?args)
@@ -161,6 +169,7 @@
                  (arguments $?before ?last))
          ?f2 <- (object (is-a list)
                         (name ?last)
+                        (index ?index)
                         (contents ?mname
                                   ?type&:(symbolp ?type)
                                   $?types&:(all-symbolsp ?types)
@@ -172,6 +181,7 @@
          =>
          (unmake-instance ?f2)
          (bind ?name (instance-name (make-instance ?last of defmethod-argument
+                                                   (index ?index)
                                                    (argument-name ?mname)
                                                    (parent ?args)
                                                    (types ?type ?types)
@@ -186,6 +196,7 @@
                  (arguments $?before ?last))
          ?f2 <- (object (is-a list)
                         (name ?last)
+                        (index ?index)
                         (contents ?mname
                                   ?type&:(symbolp ?type)
                                   $?types&:(all-symbolsp ?types)))
@@ -195,6 +206,7 @@
          (unmake-instance ?f2)
          (modify-instance ?f3 
                           (parent (instance-name (make-instance ?last of defmethod-argument
+                                                                (index ?index)
                                                                 (argument-name ?mname)
                                                                 (parent ?args)
                                                                 (types ?type ?types))))))
@@ -207,6 +219,7 @@
                  (arguments $?before ?last))
          ?f2 <- (object (is-a list)
                         (name ?last)
+                        (index ?index)
                         (contents ?mname
                                   ?query))
          ?f4 <- (object (is-a multifield-variable)
@@ -216,6 +229,7 @@
          =>
          (unmake-instance ?f2)
          (bind ?name (instance-name (make-instance ?last of defmethod-argument
+                                                   (index ?index)
                                                    (argument-name ?mname)
                                                    (parent ?args)
                                                    (query ?query))))
@@ -306,6 +320,7 @@
                  (arguments $? ?curr $?))
          ?f <- (object (is-a list)
                        (name ?curr)
+                       (index ?index)
                        (contents ?mname
                                  ?type&:(symbolp ?type)
                                  $?types&:(all-symbolsp ?types)))
@@ -314,6 +329,7 @@
          =>
          (unmake-instance ?f)
          (bind ?name (instance-name (make-instance ?curr of defmethod-argument
+                                                   (index ?index)
                                                    (parent ?args)
                                                    (argument-name ?mname)
                                                    (types ?type ?types))))
@@ -325,6 +341,7 @@
                  (arguments $? ?curr $?))
          ?f <- (object (is-a list)
                        (name ?curr)
+                       (index ?index)
                        (contents ?mname
                                  ?query))
          ?f2 <- (object (is-a singlefield-variable)
@@ -334,6 +351,7 @@
          =>
          (unmake-instance ?f)
          (bind ?name (instance-name (make-instance ?curr of defmethod-argument
+                                                   (index ?index)
                                                    (parent ?args)
                                                    (argument-name ?mname)
                                                    (query ?query))))

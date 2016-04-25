@@ -61,6 +61,7 @@
          (declare (salience ?*priority:three*))
          (stage (current parse))
          ?f <- (object (is-a list)
+                       (index ?index)
                        (contents declare 
                                  ?salience 
                                  ?auto-focus)
@@ -77,6 +78,7 @@
          =>
          (unmake-instance ?f ?f2 ?f3)
          (make-instance ?name of defrule-declaration
+                        (index ?index)
                         (parent ?parent)
                         (salience ?s-value)
                         (auto-focus ?af-value)))
@@ -85,6 +87,7 @@
          (declare (salience ?*priority:three*))
          (stage (current parse))
          ?f <- (object (is-a list)
+                       (index ?index)
                        (contents declare ?auto-focus ?salience)
                        (name ?name)
                        (parent ?parent))
@@ -97,6 +100,7 @@
          =>
          (unmake-instance ?f ?f2 ?f3)
          (make-instance ?name of defrule-declaration
+                        (index ?index)
                         (parent ?parent)
                         (salience ?s-value)
                         (auto-focus ?af-value)))
@@ -105,6 +109,7 @@
          (declare (salience ?*priority:three*))
          (stage (current parse))
          ?f <- (object (is-a list)
+                       (index ?index)
                        (contents declare ?auto-focus)
                        (name ?name)
                        (parent ?parent))
@@ -114,6 +119,7 @@
          =>
          (unmake-instance ?f ?f3)
          (make-instance ?name of defrule-declaration
+                        (index ?index)
                         (parent ?parent)
                         (auto-focus ?af-value)))
 
@@ -121,6 +127,7 @@
          (declare (salience ?*priority:three*))
          (stage (current parse))
          ?f <- (object (is-a list)
+                       (index ?index)
                        (contents declare ?salience)
                        (name ?name)
                        (parent ?parent))
@@ -130,6 +137,7 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defrule-declaration
+                        (index ?index)
                         (parent ?parent)
                         (salience ?s-value)))
 
@@ -137,6 +145,7 @@
          (declare (salience 1))
          (stage (current parse))
          ?f <- (object (is-a list)
+                       (index ?index)
                        (contents defrule 
                                  ?rule-name 
                                  ?comment
@@ -151,6 +160,7 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defrule 
+                        (index ?index)
                         (rule-name ?rule-name)
                         (comment ?cvalue)
                         (parent ?parent)
@@ -161,6 +171,7 @@
          (declare (salience 1))
          (stage (current parse))
          ?f <- (object (is-a list)
+                       (index ?index)
                        (contents defrule
                                  ?rule-name
                                  ?match&:(not (string-classp ?match))
@@ -172,6 +183,7 @@
          =>
          (unmake-instance ?f)
          (make-instance ?name of defrule
+                        (index ?index)
                         (rule-name ?rule-name)
                         (parent ?parent)
                         (matches ?match 
@@ -182,6 +194,7 @@
          (declare (salience 2))
          (stage (current parse))
          ?f <- (object (is-a list)
+                       (index ?index)
                        (contents defrule 
                                  ?rule-name 
                                  ?comment
@@ -201,6 +214,7 @@
          =>
          (unmake-instance ?f ?f2 ?f4)
          (make-instance ?name of defrule 
+                        (index ?index)
                         (rule-name ?rule-name)
                         (auto-focus ?auto-focus)
                         (salience ?salience)
@@ -213,6 +227,7 @@
          (declare (salience 2))
          (stage (current parse))
          ?f <- (object (is-a list)
+                       (index ?index)
                        (contents defrule
                                  ?rule-name
                                  ?decl
@@ -228,6 +243,7 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defrule
+                        (index ?index)
                         (rule-name ?rule-name)
                         (auto-focus ?auto-focus)
                         (salience ?salience)
@@ -265,11 +281,13 @@
                        (name ?parent)
                        (matches $?before ?list $?after))
          (object (is-a list)
+                 (index ?index)
                  (name ?list)
                  (contents $?contents))
          =>
          (unmake-instance ?list)
          (make-instance ?list of match
+                       (index ?index)
                         (parent ?parent)
                         (contents ?contents)))
 
@@ -284,11 +302,13 @@
                                  $?after)
                        (name ?parent))
          ?f2 <- (object (is-a list)
+                        (index ?index)
                         (name ?list)
                         (contents $?contents))
          =>
          (unmake-instance ?f2)
          (make-instance ?list of match
+                        (index ?index)
                         (parent ?parent)
                         (binding ?var)
                         (contents ?contents))

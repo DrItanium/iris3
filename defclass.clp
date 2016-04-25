@@ -52,6 +52,7 @@
                                  ?is-a
                                  $?rest)
                        (parent ?parent)
+                       (index ?index)
                        (name ?name))
          ?f3 <- (object (is-a string)
                         (name ?comment)
@@ -62,6 +63,7 @@
          =>
          (unmake-instance ?f ?f2 ?f3)
          (make-instance ?name of defclass
+                        (index ?index)
                         (class-name ?class-name)
                         (parent ?parent)
                         (comment ?cvalue)
@@ -77,6 +79,7 @@
                                  ?is-a
                                  $?rest)
                        (parent ?parent)
+                       (index ?index)
                        (name ?name))
          ?f2 <- (object (is-a list)
                         (name ?is-a)
@@ -84,6 +87,7 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defclass
+                        (index ?index)
                         (class-name ?class-name)
                         (parent ?parent)
                         (inherits-from ?ia)
@@ -125,10 +129,12 @@
                        (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
+                       (index ?index)
                        (contents message-handler ?name))
          =>
          (unmake-instance ?q)
          (make-instance ?curr of message-handler-documentation
+                        (index ?index)
                         (parent ?parent)
                         (handler-name ?name)))
 (defrule translate-defclass:convert-message-handler-documentation:type
@@ -138,10 +144,12 @@
                        (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
+                       (index ?index)
                        (contents message-handler ?name ?type))
          =>
          (unmake-instance ?q)
          (make-instance ?curr of message-handler-documentation
+                        (index ?index)
                         (parent ?parent)
                         (handler-name ?name)
                         (handler-type ?type)))
