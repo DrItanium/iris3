@@ -4,7 +4,7 @@
                      "(defmethod construct-instance
                         \"convert a symbol of type %s to class of type %s\"
                         ((?class SYMBOL 
-                                 (eq ?class 
+                                 (eq ?current-argument
                                      %s))
                          (?parent SYMBOL
                                   INSTANCE-NAME)

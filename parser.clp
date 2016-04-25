@@ -50,8 +50,10 @@
                          INSTANCE-NAME)
                    (default ?NONE))
              (multislot elements))
+
 (defgeneric construct-instance
             "constructs an instance of soemthing given a series of variables. Returns the instance name of the thing")
+
 (defmessage-handler SYMBOL part-of-a primary
                     "returns FALSE unless the target type is SYMBOL"
                     (?type)
@@ -163,10 +165,11 @@
 (defclass singlefield-wildcard (is-a wildcard))
 
 
+
 (defmethod construct-instance
   "convert a symbol of type OR_CONSTRAINT to class of type or-constraint"
   ((?class SYMBOL 
-           (eq ?class 
+           (eq ?current-argument
                OR_CONSTRAINT))
    (?parent SYMBOL
             INSTANCE-NAME)
@@ -178,7 +181,7 @@
 (defmethod construct-instance
   "convert a symbol of type AND_CONSTRAINT to class of type and-constraint"
   ((?class SYMBOL 
-           (eq ?class 
+           (eq ?current-argument
                AND_CONSTRAINT))
    (?parent SYMBOL
             INSTANCE-NAME)
@@ -190,7 +193,7 @@
 (defmethod construct-instance
   "convert a symbol of type NOT_CONSTRAINT to class of type not-constraint"
   ((?class SYMBOL 
-           (eq ?class 
+           (eq ?current-argument
                NOT_CONSTRAINT))
    (?parent SYMBOL
             INSTANCE-NAME)
@@ -202,7 +205,7 @@
 (defmethod construct-instance
   "convert a symbol of type MF_WILDCARD to class of type multifield-wildcard"
   ((?class SYMBOL 
-           (eq ?class 
+           (eq ?current-argument
                MF_WILDCARD))
    (?parent SYMBOL
             INSTANCE-NAME)
@@ -214,7 +217,7 @@
 (defmethod construct-instance
   "convert a symbol of type SF_WILDCARD to class of type singlefield-wildcard"
   ((?class SYMBOL 
-           (eq ?class 
+           (eq ?current-argument
                SF_WILDCARD))
    (?parent SYMBOL
             INSTANCE-NAME)
@@ -226,7 +229,7 @@
 (defmethod construct-instance
   "convert a symbol of type MF_VARIABLE to class of type multifield-variable"
   ((?class SYMBOL 
-           (eq ?class 
+           (eq ?current-argument
                MF_VARIABLE))
    (?parent SYMBOL
             INSTANCE-NAME)
@@ -238,7 +241,7 @@
 (defmethod construct-instance
   "convert a symbol of type SF_VARIABLE to class of type singlefield-variable"
   ((?class SYMBOL 
-           (eq ?class 
+           (eq ?current-argument
                SF_VARIABLE))
    (?parent SYMBOL
             INSTANCE-NAME)
@@ -250,7 +253,7 @@
 (defmethod construct-instance
   "convert a symbol of type MF_GBL_VARIABLE to class of type multifield-global-variable"
   ((?class SYMBOL 
-           (eq ?class 
+           (eq ?current-argument
                MF_GBL_VARIABLE))
    (?parent SYMBOL
             INSTANCE-NAME)
@@ -262,7 +265,7 @@
 (defmethod construct-instance
   "convert a symbol of type GBL_VARIABLE to class of type singlefield-global-variable"
   ((?class SYMBOL 
-           (eq ?class 
+           (eq ?current-argument
                GBL_VARIABLE))
    (?parent SYMBOL
             INSTANCE-NAME)
