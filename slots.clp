@@ -219,14 +219,12 @@
                        (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
-                       (index ?index)
                        (contents slot|single-slot 
                                  ?name 
                                  $?rest))
          =>
          (unmake-instance ?q)
          (make-instance ?curr of defclass-single-slot
-                        (index ?index)
                         (slot-name ?name)
                         (parent ?parent)
                         (facets ?rest)))
@@ -240,14 +238,12 @@
                        (name ?parent))
          ?q <- (object (is-a list)
                        (name ?curr)
-                       (index ?index)
                        (contents multislot 
                                  ?name 
                                  $?rest))
          =>
          (unmake-instance ?q)
          (make-instance ?curr of defclass-multislot 
-                        (index ?index)
                         (slot-name ?name)
                         (parent ?parent)
                         (facets ?rest)))
@@ -475,13 +471,11 @@
                        (name ?parent))
          ?f2 <- (object (is-a list)
                         (name ?curr)
-                        (index ?index)
                         (contents default
                                   $?expressions))
          =>
          (unmake-instance ?f2)
          (make-instance ?curr of default
-                        (index ?index)
                         (parent ?parent)
                         (variable nil)
                         (expressions ?expressions))
@@ -499,7 +493,6 @@
                        (name ?parent))
          ?f2 <- (object (is-a list)
                         (name ?curr)
-                        (index ?index)
                         (contents default
                                   ?c))
          ?f3 <- (object (is-a singlefield-variable)
@@ -508,7 +501,6 @@
          =>
          (unmake-instance ?f2)
          (make-instance ?curr of default
-                        (index ?index)
                         (parent ?parent)
                         (variable ?c))
          (modify-instance ?f
@@ -525,13 +517,11 @@
                        (name ?parent))
          ?f2 <- (object (is-a list)
                         (name ?curr)
-                        (index ?index)
                         (contents default-dynamic
                                   $?expressions))
          =>
          (unmake-instance ?f2)
          (make-instance ?curr of default-dynamic
-                        (index ?index)
                         (parent ?parent)
                         (expressions ?expressions))
          (modify-instance ?f (facets ?a ?b)
@@ -672,14 +662,12 @@
                        (name ?parent))
          ?f2 <- (object (is-a list)
                         (name ?slot)
-                        (index ?index)
                         (contents slot 
                                   ?name
                                   $?facets))
          =>
          (unmake-instance ?f2)
          (make-instance ?slot of deftemplate-single-slot
-                        (index ?index)
                         (parent ?parent)
                         (slot-name ?name)
                         (facets ?facets)))
@@ -693,14 +681,12 @@
                        (name ?parent))
          ?f2 <- (object (is-a list)
                         (name ?slot)
-                        (index ?index)
                         (contents multislot 
                                   ?name
                                   $?facets))
          =>
          (unmake-instance ?f2)
          (make-instance ?slot of deftemplate-multislot
-                        (index ?index)
                         (parent ?parent)
                         (slot-name ?name)
                         (facets ?facets)))

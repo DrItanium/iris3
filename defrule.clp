@@ -49,7 +49,6 @@
          (declare (salience 1))
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (index ?index)
                        (contents defrule 
                                  ?rule-name 
                                  ?comment
@@ -64,7 +63,6 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of defrule 
-                        (index ?index)
                         (rule-name ?rule-name)
                         (comment ?cvalue)
                         (parent ?parent)
@@ -75,7 +73,6 @@
          (declare (salience 1))
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (index ?index)
                        (contents defrule
                                  ?rule-name
                                  ?match&:(not (string-classp ?match))
@@ -87,7 +84,6 @@
          =>
          (unmake-instance ?f)
          (make-instance ?name of defrule
-                        (index ?index)
                         (rule-name ?rule-name)
                         (parent ?parent)
                         (matches ?match 
@@ -103,12 +99,10 @@
                        (matches $?before ?list $?after))
          (object (is-a list)
                  (name ?list)
-                 (index ?index)
                  (contents $?contents))
          =>
          (unmake-instance ?list)
          (make-instance ?list of match
-                        (index ?index)
                         (parent ?parent)
                         (contents ?contents)))
 
@@ -123,14 +117,12 @@
                  (matches $?before ?var <- ?list $?after))
          ?f2 <- (object (is-a list)
                         (name ?list)
-                        (index ?index)
                         (contents $?contents))
          =>
          (unmake-instance ?f2)
          (modify-instance ?rule
                           (matches $?before
                                     (make-instance ?list of match
-                                                   (index ?index)
                                                    (parent ?rule)
                                                    (binding ?var)
                                                    (contents ?contents))

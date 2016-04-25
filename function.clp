@@ -37,7 +37,6 @@
 (defrule translate-deffunction:comment
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (index ?index)
                        (contents deffunction 
                                  ?func-name 
                                  ?comment
@@ -56,7 +55,6 @@
          (progn$ (?ag ?a) 
                  (send ?ag put-parent ?name))
          (make-instance ?name of deffunction
-                        (index ?index)
                         (function-name ?func-name)
                         (parent ?parent)
                         (comment ?cvalue)
@@ -65,7 +63,6 @@
 (defrule translate-deffunction:no-comment
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (index ?index)
                        (contents deffunction 
                                  ?func-name 
                                  ?args
@@ -80,7 +77,6 @@
          (progn$ (?ag ?a) 
                  (send ?ag put-parent ?name))
          (make-instance ?name of deffunction
-                        (index ?index)
                         (function-name ?func-name)
                         (parent ?parent)
                         (arguments ?a)
@@ -116,7 +112,6 @@
 (defrule convert-defmessage-handler:all
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (index ?index)
                        (contents defmessage-handler
                                  ?class-name&:(symbolp ?class-name)
                                  ?message-name&:(symbolp ?message-name)
@@ -140,7 +135,6 @@
          (progn$ (?p ?params)
                  (send ?p put-parent ?id))
          (make-instance ?id of defmessage-handler
-                        (index ?index)
                         (parent ?parent)
                         (comment ?cvalue)
                         (target-class ?class-id)
@@ -153,7 +147,6 @@
 (defrule convert-defmessage-handler:no-comment
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (index ?index)
                        (contents defmessage-handler
                                  ?class-name&:(symbolp ?class-name)
                                  ?message-name&:(symbolp ?message-name)
@@ -173,7 +166,6 @@
          (progn$ (?p ?params)
                  (send ?p put-parent ?id))
          (make-instance ?id of defmessage-handler
-                        (index ?index)
                         (parent ?parent)
                         (target-class ?class-id)
                         (function-name ?message-name)
@@ -184,7 +176,6 @@
 (defrule convert-defmessage-handler:no-handler
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (index ?index)
                        (contents defmessage-handler
                                  ?class-name&:(symbolp ?class-name)
                                  ?message-name&:(symbolp ?message-name)
@@ -207,7 +198,6 @@
          (progn$ (?p ?params)
                  (send ?p put-parent ?id))
          (make-instance ?id of defmessage-handler
-                        (index ?index)
                         (parent ?parent)
                         (comment ?cvalue)
                         (target-class ?class-id)
@@ -218,7 +208,6 @@
 (defrule convert-defmessage-handler:no-handler-or-comment
          (stage (current parse))
          ?f <- (object (is-a list)
-                       (index ?index)
                        (contents defmessage-handler
                                  ?class-name&:(symbolp ?class-name)
                                  ?message-name&:(symbolp ?message-name)
@@ -237,7 +226,6 @@
          (progn$ (?p ?params)
                  (send ?p put-parent ?id))
          (make-instance ?id of defmessage-handler
-                        (index ?index)
                         (parent ?parent)
                         (target-class ?class-id)
                         (function-name ?message-name)
@@ -304,7 +292,6 @@
          ?f <- (object (is-a singlefield-variable)
                        (value ?cvalue)
                        (name ?targ&~?arg)
-                       (index ?index)
                        (parent ?parent))
          (test (send ?f 
                      parent-is 
@@ -312,7 +299,6 @@
          =>
          (unmake-instance ?f)
          (make-instance ?targ of reference
-                        (index ?index)
                         (parent ?parent)
                         (value ?arg)))
 
@@ -328,7 +314,6 @@
          ?f <- (object (is-a multifield-variable)
                        (value ?cvalue)
                        (name ?name&~?last)
-                       (index ?index)
                        (parent ?parent))
          (test (send ?f 
                      parent-is 
@@ -336,7 +321,6 @@
          =>
          (unmake-instance ?f)
          (make-instance ?name of reference
-                        (index ?index)
                         (parent ?parent)
                         (value ?last)
                         (expand TRUE)))
@@ -354,7 +338,6 @@
                        (value ?qvalue&:(eq ?cvalue
                                            (str-cat "$" ?qvalue)))
                        (name ?name)
-                       (index ?index)
                        (parent ?parent))
          (test (send ?f 
                      parent-is 
@@ -362,7 +345,6 @@
          =>
          (unmake-instance ?f)
          (make-instance ?name of reference
-                        (index ?index)
                         (parent ?parent)
                         (value ?last)
                         (expand TRUE)))
@@ -377,7 +359,6 @@
                  (name ?arg)
                  (value ?cvalue))
          ?f <- (object (is-a singlefield-variable)
-                       (index ?index)
                        (value ?cvalue)
                        (name ?targ&~?arg)
                        (parent ?parent))
@@ -387,7 +368,6 @@
          =>
          (unmake-instance ?f)
          (make-instance ?targ of reference
-                        (index ?index)
                         (parent ?parent)
                         (value ?arg)))
 
@@ -403,7 +383,6 @@
          ?f <- (object (is-a multifield-variable)
                        (value ?mfvalue&:(eq ?mfvalue 
                                             (format nil "$%s" ?cvalue)))
-                       (index ?index)
                        (name ?targ&~?arg)
                        (parent ?parent))
          (test (send ?f 
@@ -412,7 +391,6 @@
          =>
          (unmake-instance ?f)
          (make-instance ?targ of reference
-                        (index ?index)
                         (parent ?parent)
                         (value ?arg)))
 
@@ -428,7 +406,6 @@
          ?f <- (object (is-a multifield-variable)
                        (value ?cvalue)
                        (name ?name&~?last)
-                       (index ?index)
                        (parent ?parent))
          (test (send ?f 
                      parent-is 
@@ -436,7 +413,6 @@
          =>
          (unmake-instance ?f)
          (make-instance ?name of reference
-                        (index ?index)
                         (parent ?parent)
                         (value ?last)
                         (expand TRUE)))
@@ -454,7 +430,6 @@
                        (value ?qvalue&:(eq ?cvalue
                                            (format nil "$%s" ?qvalue)))
                        (name ?name)
-                       (index ?index)
                        (parent ?parent))
          (test (send ?f 
                      parent-is 
@@ -462,7 +437,6 @@
          =>
          (unmake-instance ?f)
          (make-instance ?name of reference
-                        (index ?index)
                         (parent ?parent)
                         (value ?last)
                         (expand TRUE)))

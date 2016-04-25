@@ -10,8 +10,7 @@
                                                        ?value)
                                              (top ?top 
                                                   $?)
-                                             (router ?r)
-                                             (count ?count))
+                                             (router ?r))
                                (object (is-a list)
                                        (name ?top)
                                        (contents $?contents))
@@ -19,11 +18,9 @@
                                (modify-instance ?top
                                                 (contents ?contents
                                                           (make-instance of %s
-                                                                         (index ?count)
                                                                          (parent ?top)
                                                                          (value ?value))))
                                (modify-instance ?f 
-                                                (count (+ ?count 1))
                                                 (elements (next-token ?r))))%n%n
                      (defrule construct-special-instance-outside-list:%s
                               \"convert a symbol of type %s to class of type %s\"
@@ -34,16 +31,13 @@
                                                       ?value)
                                             (top ?file)
                                             (name ?file)
-                                            (router ?r)
-                                            (count ?count))
+                                            (router ?r))
                               =>
                               (printout werror
                                         \"WARNING: Found a special tag outside a list!\" crlf)
                               (modify-instance ?f
-                                               (count (+ ?count 1))
                                                (elements (next-token ?r)))
                               (make-instance of %s
-                                             (index ?count)
                                              (parent ?file)
                                              (value ?value)))%n%n"
                      ?output-type

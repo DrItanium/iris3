@@ -34,14 +34,12 @@
                            ?var
                            $?value)
                  (parent ?parent)
-                 (index ?index)
                  (name ?name))
          (object (is-a variable)
                  (name ?var))
          =>
          (unmake-instance ?name)
          (make-instance ?name of bind
-                        (index ?index)
                         (parent ?parent)
                         (variable ?var)
                         (value ?value)))
@@ -83,7 +81,6 @@
          =>
          (retract ?f)
          (make-instance ?id of reference
-                        (index 0)
                         (parent ?parent)
                         (value ?value)))
 

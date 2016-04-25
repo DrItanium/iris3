@@ -41,11 +41,6 @@
 
 (defclass file 
   (is-a USER)
-  (slot count
-        (visibility public)
-        (storage local)
-        (type INTEGER)
-        (range 0 ?VARIABLE))
   (slot file
         (visibility public)
         (storage local)
@@ -78,12 +73,6 @@
   (slot parent 
         (type SYMBOL
               INSTANCE-NAME)
-        (default ?NONE))
-  (slot index
-        (type INTEGER)
-        (range 0 ?VARIABLE)
-        (visibility public)
-        (storage local)
         (default ?NONE))
   (message-handler parent-is primary))
 
@@ -206,55 +195,47 @@
                  (elements LPAREN ?)
                  (top ?file)
                  (name ?file)
-                 (count ?count)
                  (router ?router))
          =>
          (modify-instance ?file 
                           (top (make-instance of list
-                                              (index ?count)
                                               (parent ?file)) 
                                ?file)
-                          (count (+ ?count 1))
                           (elements (next-token ?router))))
 (defrule new-list
-         (declare (salience 2))
+         (declare (salience 3))
          (stage (current lex))
          ?f <- (object (is-a file)
                        (elements LPAREN ?)
                        (top ?top $?rest)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
          =>
          (bind ?z 
                (make-instance of list
-                              (index ?count)
                               (parent ?top)))
-         (modify-instance ?top 
-                          (contents ?contents 
-                                    ?z))
-         (modify-instance ?f (top ?z
-                                  ?top
-                                  ?rest)
-                          (elements (next-token ?r))
-                          (count (+ ?count 1))))
-
-(deffunction sort-by-index
-             (?a ?b)
-             (> (send ?a get-index)
-                (send ?b get-index)))
+         (slot-insert$ ?top
+                       contents
+                       (+ (length$ ?contents) 1)
+                       ?z)
+         (slot-insert$ ?f
+                       top
+                       1
+                       ?z)
+         (slot-replace$ ?f
+                        elements
+                        1 2
+                        (next-token ?r)))
 
 (defrule end-list
-         (declare (salience 2))
+         (declare (salience 3))
          (stage (current lex))
          ?f <- (object (is-a file)
                        (elements RPAREN ?)
                        (router ?r)
-                       (top ?top $?rest))
-         (object (is-a list)
-                 (name ?top))
+                       (top ? $?rest))
          =>
          (modify-instance ?f 
                           (elements (next-token ?r))
@@ -270,19 +251,16 @@
                        (elements ?type
                                  ?value)
                        (top ?top $?)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
          =>
          (modify-instance ?f 
-                          (count (+ ?count 1))
                           (elements (next-token ?r)))
          (modify-instance ?top 
                           (contents ?contents
                                     (make-instance of ?type
-                                                   (index ?count)
                                                    (parent ?top)
                                                    (value ?value)))))
 
@@ -293,16 +271,13 @@
                        (elements ?type ?value)
                        (router ?r)
                        (top ?file)
-                       (name ?file)
-                       (count ?count))
+                       (name ?file))
          =>
          (printout werror 
                    "WARNING: Found a special tag outside a list!" crlf)
          (modify-instance ?f
-                          (elements (next-token ?r))
-                          (count (+ ?count 1)))
+                          (elements (next-token ?r)))
          (make-instance of ?type
-                        (index ?count)
                         (parent ?file)
                         (value ?value)))
 
@@ -312,19 +287,16 @@
          ?f <- (object (is-a file)
                        (elements ?value&:(stringp ?value))
                        (top ?top $?)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
          =>
          (modify-instance ?f
-                          (elements (next-token ?r))
-                          (count (+ ?count 1)))
+                          (elements (next-token ?r)))
          (modify-instance ?top 
                           (contents ?contents
                                     (make-instance of string
-                                                   (index ?count)
                                                    (parent ?top)
                                                    (value ?value)))))
 
@@ -335,16 +307,13 @@
                        (elements ?value&:(stringp ?value))
                        (name ?file)
                        (top ?file)
-                       (count ?count)
                        (router ?r))
          =>
          (printout werror 
                    "WARNING: Found a string outside a list!" crlf)
          (modify-instance ?f
-                          (count (+ ?count 1))
                           (elements (next-token ?r)))
          (make-instance of string
-                        (index ?count)
                         (parent ?file)
                         (value ?value)))
 
@@ -353,7 +322,6 @@
          (stage (current lex))
          ?f <- (object (is-a file)
                        (elements ?value)
-                       (count ?count)
                        (top ?top $?)
                        (router ?r))
          (object (is-a list)
@@ -365,8 +333,7 @@
                           (contents ?contents
                                     ?value))
          (modify-instance ?f
-                          (elements (next-token ?r))
-                          (count (+ ?count 1))))
+                          (elements (next-token ?r))))
 
 
 (defrule warn:parse-normal-element-outside-list
@@ -376,7 +343,6 @@
                        (elements ?value)
                        (name ?file)
                        (top ?file)
-                       (count ?count)
                        (router ?r))
          =>
          (format werror 
@@ -384,10 +350,8 @@
                  (class ?value)
                  ?value)
          (modify-instance ?f 
-                          (count (+ ?count 1))
                           (elements (next-token ?r)))
          (make-instance of typed-scalar-node
-                        (index ?count)
                         (parent ?file)
                         (type (class ?value))
                         (value ?value)))
@@ -457,8 +421,7 @@
                                  ?value)
                        (top ?top 
                             $?)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
@@ -466,11 +429,9 @@
          (modify-instance ?top
                           (contents ?contents
                                     (make-instance of or-constraint
-                                                   (index ?count)
                                                    (parent ?top)
                                                    (value ?value))))
          (modify-instance ?f 
-                          (count (+ ?count 1))
                           (elements (next-token ?r))))
 
 
@@ -483,16 +444,13 @@
                                  ?value)
                        (top ?file)
                        (name ?file)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
          (modify-instance ?f
-                          (count (+ ?count 1))
                           (elements (next-token ?r)))
          (make-instance of or-constraint
-                        (index ?count)
                         (parent ?file)
                         (value ?value)))
 
@@ -505,8 +463,7 @@
                                  ?value)
                        (top ?top 
                             $?)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
@@ -514,11 +471,9 @@
          (modify-instance ?top
                           (contents ?contents
                                     (make-instance of and-constraint
-                                                   (index ?count)
                                                    (parent ?top)
                                                    (value ?value))))
          (modify-instance ?f 
-                          (count (+ ?count 1))
                           (elements (next-token ?r))))
 
 
@@ -531,16 +486,13 @@
                                  ?value)
                        (top ?file)
                        (name ?file)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
          (modify-instance ?f
-                          (count (+ ?count 1))
                           (elements (next-token ?r)))
          (make-instance of and-constraint
-                        (index ?count)
                         (parent ?file)
                         (value ?value)))
 
@@ -553,8 +505,7 @@
                                  ?value)
                        (top ?top 
                             $?)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
@@ -562,11 +513,9 @@
          (modify-instance ?top
                           (contents ?contents
                                     (make-instance of not-constraint
-                                                   (index ?count)
                                                    (parent ?top)
                                                    (value ?value))))
          (modify-instance ?f 
-                          (count (+ ?count 1))
                           (elements (next-token ?r))))
 
 
@@ -579,16 +528,13 @@
                                  ?value)
                        (top ?file)
                        (name ?file)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
          (modify-instance ?f
-                          (count (+ ?count 1))
                           (elements (next-token ?r)))
          (make-instance of not-constraint
-                        (index ?count)
                         (parent ?file)
                         (value ?value)))
 
@@ -601,8 +547,7 @@
                                  ?value)
                        (top ?top 
                             $?)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
@@ -610,11 +555,9 @@
          (modify-instance ?top
                           (contents ?contents
                                     (make-instance of multifield-wildcard
-                                                   (index ?count)
                                                    (parent ?top)
                                                    (value ?value))))
          (modify-instance ?f 
-                          (count (+ ?count 1))
                           (elements (next-token ?r))))
 
 
@@ -627,16 +570,13 @@
                                  ?value)
                        (top ?file)
                        (name ?file)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
          (modify-instance ?f
-                          (count (+ ?count 1))
                           (elements (next-token ?r)))
          (make-instance of multifield-wildcard
-                        (index ?count)
                         (parent ?file)
                         (value ?value)))
 
@@ -649,8 +589,7 @@
                                  ?value)
                        (top ?top 
                             $?)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
@@ -658,11 +597,9 @@
          (modify-instance ?top
                           (contents ?contents
                                     (make-instance of singlefield-wildcard
-                                                   (index ?count)
                                                    (parent ?top)
                                                    (value ?value))))
          (modify-instance ?f 
-                          (count (+ ?count 1))
                           (elements (next-token ?r))))
 
 
@@ -675,16 +612,13 @@
                                  ?value)
                        (top ?file)
                        (name ?file)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
          (modify-instance ?f
-                          (count (+ ?count 1))
                           (elements (next-token ?r)))
          (make-instance of singlefield-wildcard
-                        (index ?count)
                         (parent ?file)
                         (value ?value)))
 
@@ -697,8 +631,7 @@
                                  ?value)
                        (top ?top 
                             $?)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
@@ -706,11 +639,9 @@
          (modify-instance ?top
                           (contents ?contents
                                     (make-instance of multifield-variable
-                                                   (index ?count)
                                                    (parent ?top)
                                                    (value ?value))))
          (modify-instance ?f 
-                          (count (+ ?count 1))
                           (elements (next-token ?r))))
 
 
@@ -723,16 +654,13 @@
                                  ?value)
                        (top ?file)
                        (name ?file)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
          (modify-instance ?f
-                          (count (+ ?count 1))
                           (elements (next-token ?r)))
          (make-instance of multifield-variable
-                        (index ?count)
                         (parent ?file)
                         (value ?value)))
 
@@ -745,8 +673,7 @@
                                  ?value)
                        (top ?top 
                             $?)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
@@ -754,11 +681,9 @@
          (modify-instance ?top
                           (contents ?contents
                                     (make-instance of singlefield-variable
-                                                   (index ?count)
                                                    (parent ?top)
                                                    (value ?value))))
          (modify-instance ?f 
-                          (count (+ ?count 1))
                           (elements (next-token ?r))))
 
 
@@ -771,16 +696,13 @@
                                  ?value)
                        (top ?file)
                        (name ?file)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
          (modify-instance ?f
-                          (count (+ ?count 1))
                           (elements (next-token ?r)))
          (make-instance of singlefield-variable
-                        (index ?count)
                         (parent ?file)
                         (value ?value)))
 
@@ -793,8 +715,7 @@
                                  ?value)
                        (top ?top 
                             $?)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
@@ -802,11 +723,9 @@
          (modify-instance ?top
                           (contents ?contents
                                     (make-instance of multifield-global-variable
-                                                   (index ?count)
                                                    (parent ?top)
                                                    (value ?value))))
          (modify-instance ?f 
-                          (count (+ ?count 1))
                           (elements (next-token ?r))))
 
 
@@ -819,16 +738,13 @@
                                  ?value)
                        (top ?file)
                        (name ?file)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
          (modify-instance ?f
-                          (count (+ ?count 1))
                           (elements (next-token ?r)))
          (make-instance of multifield-global-variable
-                        (index ?count)
                         (parent ?file)
                         (value ?value)))
 
@@ -841,8 +757,7 @@
                                  ?value)
                        (top ?top 
                             $?)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          (object (is-a list)
                  (name ?top)
                  (contents $?contents))
@@ -850,11 +765,9 @@
          (modify-instance ?top
                           (contents ?contents
                                     (make-instance of singlefield-global-variable
-                                                   (index ?count)
                                                    (parent ?top)
                                                    (value ?value))))
          (modify-instance ?f 
-                          (count (+ ?count 1))
                           (elements (next-token ?r))))
 
 
@@ -867,16 +780,13 @@
                                  ?value)
                        (top ?file)
                        (name ?file)
-                       (router ?r)
-                       (count ?count))
+                       (router ?r))
          =>
          (printout werror
                    "WARNING: Found a special tag outside a list!" crlf)
          (modify-instance ?f
-                          (count (+ ?count 1))
                           (elements (next-token ?r)))
          (make-instance of singlefield-global-variable
-                        (index ?count)
                         (parent ?file)
                         (value ?value)))
 

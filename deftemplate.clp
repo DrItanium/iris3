@@ -32,7 +32,6 @@
                                  ?comment&:(string-classp ?comment)
                                  $?slots)
                        (parent ?parent)
-                       (index ?index)
                        (name ?name))
          ?f2 <- (object (is-a string)
                         (name ?comment)
@@ -40,7 +39,6 @@
          =>
          (unmake-instance ?f ?f2)
          (make-instance ?name of deftemplate
-                        (index ?index)
                         (template-name ?template-name)
                         (comment ?cvalue)
                         (parent ?parent)
@@ -54,13 +52,11 @@
                                  ?slot&:(not (string-classp ?slot))
                                  $?slots)
                        (parent ?parent)
-                       (index ?index)
                        (name ?name))
          =>
          (unmake-instance ?f)
          (make-instance ?name of deftemplate
                         (template-name ?template-name)
-                        (index ?index)
                         (parent ?parent)
                         (slots ?slot 
                                $?slots)))
